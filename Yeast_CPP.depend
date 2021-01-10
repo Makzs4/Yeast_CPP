@@ -1,0 +1,18 @@
+# depslib dependency file v1.0
+1609364759 source:d:\bence\tanulm¡nyok\ppke itk\yeast project\yeast_cpp\main.cpp
+	<iostream>
+	<math.h>
+	<algorithm>
+	"main.h"
+
+1609344641 source:d:\bence\tanulm¡nyok\ppke itk\yeast project\yeast_cpp\read_in.cpp
+	<iostream>
+	<fstream>
+	<sstream>
+	<string>
+	<vector>
+	<limits>
+
+1609325373 d:\bence\tanulm¡nyok\ppke itk\yeast project\yeast_cpp\main.h
+	<vector>
+
