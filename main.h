@@ -2,8 +2,7 @@
 #define MAIN_H_INCLUDED
 
 #include <vector>
-using namespace std;
 
-vector<vector<float>> read_in(string filename);
+std::vector<std::vector<float>> read_in(std::string filename);
 
 #endif // MAIN_H_INCLUDED

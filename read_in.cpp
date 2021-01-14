@@ -4,28 +4,27 @@
 #include <string>
 #include <vector>
 #include <limits>
-using namespace std;
 
-vector<vector<float>> read_in (string filename)
+std::vector<std::vector<float>> read_in (std::string filename)
 {
- ifstream fin;
- string line;
- string var;
- vector<float> var_category;
- vector<vector<float>> var_table;
+ std::ifstream fin;
+ std::string line;
+ std::string var;
+ std::vector<float> var_category;
+ std::vector<std::vector<float>> var_table;
 
- fin.open(filename, ios::in);
+ fin.open(filename, std::ios::in);
  if (fin.is_open())
   {
     while (fin.good())
     {
       // ignore header lines
-      fin.ignore(numeric_limits<streamsize>::max(), '\n');
+      fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       // read in and put variables into a table
       getline(fin,line,'\n');
       while(!line.empty())
       {
-       stringstream s(line);
+       std::stringstream s(line);
        getline(s,var,';'); //ignore first segment up to ';'
        while(getline(s,var,';'))
        {
@@ -39,6 +38,6 @@ vector<vector<float>> read_in (string filename)
     fin.close();
   }
 
-  else cout << "Error in read_in.cpp: unable to open file";
+  else std::cout << "Error in read_in.cpp: unable to open file";
   return var_table;
 }
