@@ -1,67 +1,39 @@
-#include <iostream>
-#include <math.h>
-#include <algorithm>
+#include "master.h"
 #include "main.h"
 
 int main()
 {
- //{ Read in and declare variables
- std::vector<std::vector<float>>var_table = read_in("3D_parameters.txt");
- int n = 0;
-
- /// Plate parameters ///
- int dt = static_cast<int>(var_table[n][0]);n++; //time step
- int dx = static_cast<int>(var_table[n][0]);n++; //space step
- int max_x = static_cast<int>(var_table[n][0]);n++; //size of space along x axis
- int max_y = static_cast<int>(var_table[n][0]);n++; //size of space along y axis
- int max_z = static_cast<int>(var_table[n][0]);n++; //size of space along z axis
- int max_t = static_cast<int>(var_table[n][0]);n++; //iteration number (the time of the simulation)
- float init_nutrient = var_table[n][0];n++; //initial nutrient density
- float diff_co_nutrient_agar = var_table[n][0];n++; //diffusion coefficient: nutrient diffuses in agar
- float diff_co_nutrient_air = var_table[n][0];n++; //diffusion coefficient: nutrient diffuses in air
- float diff_co_nutrient_cell = var_table[n][0];n++; //diffusion coefficient: nutrient diffuses in cell
- float diff_co_oxigen_agar = var_table[n][0];n++; //diffusion coefficient: oxigen diffuses in agar
- float diff_co_oxigen_air = var_table[n][0];n++; //diffusion coefficient: oxigen diffuses in air
- float diff_co_oxigen_cell = var_table[n][0];n++; //diffusion coefficient: oxigen diffuses in cell
- float agar_height = var_table[n][0];n++; //height of culture medium
- int diff_cnt = static_cast<int>(var_table[n][0]);n++; //number of diffusion steps/agent life cycle
-
- /// Visualization parameters ///
- int isdraw = static_cast<int>(var_table[n][0]);n++;
- int plotstep = static_cast<int>(var_table[n][0]);n++; //visualization step
- int resolution = static_cast<int>(var_table[n][0]);n++; //resolution of the slice plot
-
- /// Physics parameters ///
- float r_cutoff = var_table[n][0];n++; //cutoff distance(Lennard-Jones)
- float epsilon = var_table[n][0];n++; //for the Lennard-Jones force
- float sigma = var_table[n][0];n++; // -||-
- float max_force = var_table[n][0];n++; // -||-
- int t_lj = static_cast<int>(var_table[n][0]);n++; // iteration number for Lennard-Jones
-
- /// Cell parameters ///
- std::vector<float> init_E = var_table[n];n++; //initial energy
- std::vector<float> nutrient_uptake = var_table[n];n++; //nutrient uptake
- std::vector<float> nutrient_uptake_eff = var_table[n];n++; //nutrient uptake efficiency
- std::vector<float> div_th = var_table[n];n++; //division threshold (in terms of energy)
- std::vector<float> div_r = var_table[n];n++; //division distance
- std::vector<float> death_th = var_table[n];n++; //death threshold (in terms of energy)
- std::vector<float> metab_E = var_table[n];n++; //energy usage by metabolism
- std::vector<float> colony_type = var_table[n];n++; //type of colony
- std::vector<float> g0_factor = var_table[n];n++; //penalty in g0 state (constant multiplier)
- std::vector<float> g0_th = var_table[n];n++; //g0 threshold (in terms of energy)
- std::vector<float> branchprob = var_table[n];n++; //branching probability
- std::vector<float> div_dir_dev = var_table[n];n++; //division direction deviation
- transform(div_dir_dev.begin(), div_dir_dev.end(), div_dir_dev.begin(), [](float i){return i/M_PI;});
- std::vector<float> init_cellnum = var_table[n];n++; //initial cell number
- std::vector<float> initdev = var_table[n];n++; //initial cell deviation
- std::vector<float> initpos_x = var_table[n];n++;
- std::vector<float> initpos_y = var_table[n];n++;
- std::vector<float> initpos_z(initpos_x.size());
- fill(initpos_z.begin(),initpos_z.end(), agar_height);
+ //{---------------------------------------Create initial objects--------------------------------------
+ Plate* plate = nullptr;
+ Draw* draw = nullptr;
+ Cells cells;
+ std::vector<Nutrient> nutrients;
+ std::vector<Cells::Species> species;
  //}
 
- //{ Initialization
+ //{-----------------------------------------Read in variables-----------------------------------------
+ read_in(&plate, &draw, nutrients, species, "3D_parameters.txt");
+ //}
 
+ //{------------------------------------------Initialization-------------------------------------------
+
+ //}
+
+ Eigen::MatrixXf m(2,2);
+ m(0,0) = 3;
+ m(1,0) = 2.5;
+ m(0,1) = -1;
+ m(1,1) = m(1,0) + m(0,1);
+
+ std::cout << m << std::endl;
+ std::cout << species[1].init_pos_z << std::endl;
+ std::cout << plate->agar_height << std::endl;
+
+ //{---------------------------------------------Cleanup----------------------------------------------
+ delete draw;
+ delete plate;
+ nutrients.erase(nutrients.begin());
+ species.erase(species.begin());
  //}
 
  return 0;

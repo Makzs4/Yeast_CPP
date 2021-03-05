@@ -1,0 +1,52 @@
+PLATE PARAMETERS;
+time step;1;
+space step;1;
+diffusion counter (number of diffusion steps/agent life cycle);10;
+max x;100;
+max y;100;
+max z;20;
+iteration number (time of simulation);50;
+height of culture media (agar);10;
+initial food density (amount of food/unit cube);200;
+diffusion constant (for food in culture media)  max 1/6;0.16;
+diffusion constant (for food in air) max 1/6;0;
+diffusion constant (for food in cell)  max 1/6;0.16;
+initial oxigen density (amount of oxigen/unit cube);300;
+diffusion constant (for oxigen in culture media) max 1/6;0.1;
+diffusion constant (for oxigen in air) max 1/6;0.1;
+diffusion constant (for oxigen in cell)  max 1/6;0.1;
+
+VISUALISATION PARAMETERS;
+draw (1: yes 0:no);1;
+visualisation steps;5;
+plot resolution (same for every dimension of the plate, in x y z order), max value is min(plate x, plate y, plate z);20;
+
+PHYSICS PARAMETERS;
+cutoff distance of Lennard-Jones force;1.50;
+epsilon of Lennard-Jones force;1;
+sigma of Lennard-Jones force;0.25;
+maximum and miminum value of Lennard-Jones force (give one positive number);0.5;
+maximum iteration number of Lennard-Jones simulation;50;
+
+CELL PARAMETERS;
+initial energy;2.50;2.50;
+food uptake;0.4;0.4;
+food uptake efficiency;1;1;
+division threshold;5;5;
+division distance;1.415;1.415;
+death threshold;0.5;0.5;
+metabolic energy;0.1;0.1;
+growth type (0: colony 1: filament);0;0;
+g0 factor;0.05;0.05;
+g0 threshold;1;1;
+branching probability;0.0001;0.01;
+division direction deviation (pi/x or 0 for type 0);0;16;
+initial cell number;10;1;
+initial cell deviation;2.50;2.50;
+initial population center x;45;65;
+initial population center y;45;65;
+
+
+
+
+
