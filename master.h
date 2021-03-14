@@ -6,13 +6,52 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <vector>
 #include <limits>
 #include <math.h>
 #include <algorithm>
 #include <vector>
+#include <Eigen/SparseCore>
+
+// delete if unused!
 #include <map>
-#include <Eigen/Dense>
+#include <valarray>
+//}
+
+//{-----------------------------------Functors-----------------------------------
+class Valmatrix {
+public:
+ std::valarray<double> data;
+ int width, depth, height;
+
+ Valmatrix(int x, int y, int z) : data(x*y*z), width(x), depth(y), height(z) {} //constructor
+ Valmatrix(const Valmatrix& m) {data = m.data; width = m.width; depth = m.depth; height = m.height;} //copy constructor
+ double& operator()(int x, int y, int z) {return data[x + width*(y + depth*z)];}
+ int length() {return width*depth*height;}
+ void circshift(char dim, int val, Valmatrix& m) const{
+     size_t index = 0;
+     int chunk = 0;
+     int shift_mult = 0;
+     switch (dim){
+        case 'x':{
+            chunk = width;
+            shift_mult = 1;
+            break;}
+        case 'y':{
+            chunk = width*depth;
+            shift_mult = width;
+            break;}
+        case 'z':{
+            chunk = width*depth*height;
+            shift_mult = width*depth;
+            break;}
+     }
+     while(index < width*depth*height){
+        m.data[std::slice(index, chunk, 1)] = data[std::slice(index, chunk, 1)].cshift(-1*shift_mult*val);
+        index += chunk;
+     }
+ }
+};
+
 //}
 
 //{-----------------------------------Classes------------------------------------
@@ -43,6 +82,7 @@ class Plate{
 public:
     int dt;
     int dx;
+    int diff_cnt;
     int max_x;
     int max_y;
     int max_z;
@@ -56,6 +96,9 @@ public:
         getline(fin,line,'\n');
         while(!line.empty()){
             std::stringstream s(line);
+            s >> std::skipws >> dt;
+            s >> std::skipws >> dx;
+            s >> std::skipws >> diff_cnt;
             s >> std::skipws >> max_x;
             s >> std::skipws >> max_y;
             s >> std::skipws >> max_z;
