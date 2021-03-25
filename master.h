@@ -1,6 +1,8 @@
 #ifndef LIBRARIES_H_INCLUDED
 #define LIBRARIES_H_INCLUDED
 
+#define _USE_MATH_DEFINES
+
 //{-----------------------------------Libraries-----------------------------------
 #include <iostream>
 #include <fstream>
@@ -11,6 +13,7 @@
 #include <algorithm>
 #include <vector>
 #include <Eigen/SparseCore>
+#include <boost/dynamic_bitset.hpp>
 
 // delete if unused!
 #include <map>
@@ -28,7 +31,7 @@ public:
  double& operator()(int x, int y, int z) {return data[x + width*(y + depth*z)];}
  int length() {return width*depth*height;}
  void circshift(char dim, int val, Valmatrix& m) const{
-     size_t index = 0;
+     int index = 0;
      int chunk = 0;
      int shift_mult = 0;
      switch (dim){
@@ -83,11 +86,12 @@ public:
     int dt;
     int dx;
     int diff_cnt;
-    int max_x;
-    int max_y;
-    int max_z;
-    int max_t;
+    int x;
+    int y;
+    int z;
+    int t;
     int agar_height;
+    boost::dynamic_bitset<> occupancy_space;
 
     Plate(){}
 
@@ -99,13 +103,14 @@ public:
             s >> std::skipws >> dt;
             s >> std::skipws >> dx;
             s >> std::skipws >> diff_cnt;
-            s >> std::skipws >> max_x;
-            s >> std::skipws >> max_y;
-            s >> std::skipws >> max_z;
-            s >> std::skipws >> max_t;
+            s >> std::skipws >> x;
+            s >> std::skipws >> y;
+            s >> std::skipws >> z;
+            s >> std::skipws >> t;
             s >> std::skipws >> agar_height;
             getline(fin,line,'\n');
         }
+        occupancy_space.resize(x*y*z);
     }
 
     ~Plate(){}
@@ -118,10 +123,12 @@ public:
     float diff_const_agar; //diffusion constant in the agar
     float diff_const_air; //diffusion constant in air
     float diff_const_cell; //diffusion constant near cells, should be vector?
+    Eigen::SparseMatrix<float> laplace_mat;
+    Eigen::SparseVector<float> density_space;
 
     Nutrient(){}
 
-    Nutrient(std::ifstream& fin, std::string& line){
+    Nutrient(std::ifstream& fin, std::string& line, Plate* plate){
         fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         getline(fin,line,'\n');
         while(!line.empty()){
@@ -133,10 +140,12 @@ public:
             s >> std::skipws >> diff_const_cell;
             getline(fin,line,'\n');
         }
+        int mat_size = plate->x*plate->y*plate->z;
+        laplace_mat.resize(mat_size,mat_size);
+        density_space.resize(mat_size);
     }
 
     ~Nutrient(){}
-    //diffusion matrices later
 };
 
 class Cells{

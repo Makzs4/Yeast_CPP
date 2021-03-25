@@ -1,6 +1,6 @@
 PLATE
 time_step  space_step  diffusion_counter  max_x  max_y  max_z  iteration_number  height_of_culture_media
-1          1           10                 100    100    20     50                20
+1          1           10                 50     50     20     50                5
 
 NUTRIENT
 name  initial_density  diffusion_constant_in_culture_media  diffusion_constant_in_air  diffusion_constant_near_cells

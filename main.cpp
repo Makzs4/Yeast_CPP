@@ -19,10 +19,10 @@ int main()
 
  //}
 
- //std::cout << species[1].init_pos_z << std::endl;
+ std::cout << nutrients[1].laplace_mat.size() << std::endl;
  //std::cout << plate->dt << std::endl;
 
- //valarray_handling_test();
+ //eigen_handling_test();
  eigen_handling_test();
 
  //{---------------------------------------------Cleanup----------------------------------------------

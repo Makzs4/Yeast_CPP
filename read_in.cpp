@@ -16,7 +16,7 @@ void read_in (Plate** plate, Draw** draw, std::vector<Nutrient>& nutrients, std:
            *plate = new Plate(fin, line);
         }
         else if(line == "NUTRIENT"){
-           nutrients.push_back(Nutrient(fin, line));
+           nutrients.push_back(Nutrient(fin, line, *plate));
         }
         else if(line == "CELLS"){
            species.push_back(Cells::Species(fin, line, *plate));

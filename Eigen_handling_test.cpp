@@ -5,64 +5,57 @@ void eigen_handling_test(){
 int width = 2, depth = 3, height = 2;
 int mat_size = width*depth*height;
 
-std::vector<Eigen::Triplet<double>> adj_triplet_list;
-adj_triplet_list.reserve(6);
-Eigen::SparseMatrix<double> adj_mat(mat_size,mat_size);
+std::vector<Eigen::Triplet<float>> laplace_triplet_list;
+laplace_triplet_list.reserve(7);
+Eigen::SparseMatrix<float> laplace_mat(mat_size,mat_size);
 
-std::vector<Eigen::Triplet<double>> deg_triplet_list;
-deg_triplet_list.reserve(1);
-Eigen::SparseMatrix<double> deg_mat(mat_size,mat_size);
+Eigen::SparseVector<float> U(mat_size);
+for(int i=0; i<4; i++){
+    U.insert(i) = 1;
+}
 
 //for(int i=0; i<mat_size; i++){
-//    if(i%width!=(width-1)){adj_triplet_list.push_back(Eigen::Triplet<double>(i,i+1,1));}
-//    if(i%width!=0){adj_triplet_list.push_back(Eigen::Triplet<double>(i,i-1,1));}
-//    if((i/width)%depth!=(depth-1)){adj_triplet_list.push_back(Eigen::Triplet<double>(i,i+width,1));}
-//    if((i/width)%depth!=0){adj_triplet_list.push_back(Eigen::Triplet<double>(i,i-width,1));}
-//    if(i/(width*depth)!=(height-1)){adj_triplet_list.push_back(Eigen::Triplet<double>(i,i+(width*depth),1));}
-//    if(i/(width*depth)!=0){adj_triplet_list.push_back(Eigen::Triplet<double>(i,i-(width*depth),1));}
+//    if(i%width!=(width-1)){laplace_triplet_list.push_back(Eigen::Triplet<double>(i,i+1,1));}
+//    if(i%width!=0){laplace_triplet_list.push_back(Eigen::Triplet<double>(i,i-1,1));}
+//    if((i/width)%depth!=(depth-1)){laplace_triplet_list.push_back(Eigen::Triplet<double>(i,i+width,1));}
+//    if((i/width)%depth!=0){laplace_triplet_list.push_back(Eigen::Triplet<double>(i,i-width,1));}
+//    if(i/(width*depth)!=(height-1)){laplace_triplet_list.push_back(Eigen::Triplet<double>(i,i+(width*depth),1));}
+//    if(i/(width*depth)!=0){laplace_triplet_list.push_back(Eigen::Triplet<double>(i,i-(width*depth),1));}
 //}
 
-for(int i=0; i<width; i++){
-    for(int j=0; j<depth; j++){
-        for(int k=0; k<height; k++){
+for(int x=0; x<width; x++){
+    for(int y=0; y<depth; y++){
+        for(int z=0; z<height; z++){
                 int counter = 0;
                 //Adjacency matrix
-                if(i!=(width-1)){adj_triplet_list.push_back(Eigen::Triplet<double>(i+width*(j+depth*k),(i+1)+width*(j+depth*k),1));counter++;}
-                if(i!=0){adj_triplet_list.push_back(Eigen::Triplet<double>(i+width*(j+depth*k),(i-1)+width*(j+depth*k),1));counter++;}
-                if(j!=(depth-1)){adj_triplet_list.push_back(Eigen::Triplet<double>(i+width*(j+depth*k),i+width*((j+1)+depth*k),1));counter++;}
-                if(j!=0){adj_triplet_list.push_back(Eigen::Triplet<double>(i+width*(j+depth*k),i+width*((j-1)+depth*k),1));counter++;}
-                if(k!=(height-1)){adj_triplet_list.push_back(Eigen::Triplet<double>(i+width*(j+depth*k),i+width*(j+depth*(k+1)),1));counter++;}
-                if(k!=0){adj_triplet_list.push_back(Eigen::Triplet<double>(i+width*(j+depth*k),i+width*(j+depth*(k-1)),1));counter++;}
+                if(x!=(width-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+width*(y+depth*z),(x+1)+width*(y+depth*z),-1));counter++;}
+                if(x!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+width*(y+depth*z),(x-1)+width*(y+depth*z),-1));counter++;}
+                if(y!=(depth-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+width*(y+depth*z),x+width*((y+1)+depth*z),-1));counter++;}
+                if(y!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+width*(y+depth*z),x+width*((y-1)+depth*z),-1));counter++;}
+                if(z!=(height-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+width*(y+depth*z),x+width*(y+depth*(z+1)),-1));counter++;}
+                if(z!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+width*(y+depth*z),x+width*(y+depth*(z-1)),-1));counter++;}
 
-                //Degree matrix
-                deg_triplet_list.push_back(Eigen::Triplet<double>(i+width*(j+depth*k),i+width*(j+depth*k),counter));
+                laplace_triplet_list.push_back(Eigen::Triplet<float>(x+width*(y+depth*z),x+width*(y+depth*z),counter));
         }
     }
 }
 
-adj_mat.setFromTriplets(adj_triplet_list.begin(),adj_triplet_list.end()); //Adjacency matrix
-deg_mat.setFromTriplets(deg_triplet_list.begin(),deg_triplet_list.end()); //Degree matrix
+laplace_mat.setFromTriplets(laplace_triplet_list.begin(),laplace_triplet_list.end()); //Laplace operator matrix
 
-Eigen::SparseMatrix<double> lap_mat(mat_size,mat_size);
-lap_mat = deg_mat - adj_mat;
-
-std::cout << "Adjacency matrix" << "                "<< "Degree matrix" << "                   "<< "Laplacian matrix" << std::endl;
+std::cout << "Laplacian operator matrix" << std::endl;
 for(int i=0;i<mat_size;i++){
     for(int j=0;j<mat_size;j++){
-        std::cout << adj_mat.coeff(i,j) << ' ';
-    }
-
-    std::cout << "        ";
-
-    for(int j=0;j<mat_size;j++){
-        std::cout << deg_mat.coeff(i,j) << ' ';
-    }
-
-    std::cout << "        ";
-
-    for(int j=0;j<mat_size;j++){
-        std::cout << lap_mat.coeff(i,j) << ' ';
+        std::cout << laplace_mat.coeff(i,j) << ' ';
     }
     std::cout << std::endl;
 }
+
+float c = 0.1;
+for(int i=0; i<50; i++){
+    U -= c*laplace_mat*U; //FUCK YEAH!
+}
+for(int i=0; i<mat_size; i++){
+    std::cout<<U.coeff(i)<<std::endl;
+}
+
 }

@@ -1,9 +1,9 @@
 # depslib dependency file v1.0
-1615673379 source:d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\main.cpp
+1616695247 source:d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\main.cpp
 	"master.h"
 	"main.h"
 
-1614596374 source:d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\read_in.cpp
+1616694544 source:d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\read_in.cpp
 	"master.h"
 
 1615669348 d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\main.h
@@ -20,7 +20,7 @@
 	<vector>
 	<Eigen/Dense>
 
-1615669348 d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\master.h
+1616695475 d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\master.h
 	<iostream>
 	<fstream>
 	<sstream>
@@ -30,12 +30,13 @@
 	<algorithm>
 	<vector>
 	<Eigen/SparseCore>
+	<boost/dynamic_bitset.hpp>
 	<map>
 	<valarray>
 
 1615669349 source:d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\valarray_handling_test.cpp
 	"master.h"
 
-1615752013 source:d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\eigen_handling_test.cpp
+1616687784 source:d:\bence\tanulm햚yok\ppke itk\yeast project\yeast_cpp\eigen_handling_test.cpp
 	"master.h"
 
