@@ -1,6 +1,6 @@
 PLATE
 time_step  space_step  diffusion_counter  max_x  max_y  max_z  iteration_number  height_of_culture_media
-1          1           10                 50     50     20     50                5
+1          1           10                 3      3      3      50                1
 
 NUTRIENT
 name  initial_density  diffusion_constant_in_culture_media  diffusion_constant_in_air  diffusion_constant_near_cells
@@ -8,7 +8,7 @@ food  200              0.16                                 0                   
 
 NUTRIENT
 name  initial_density  diffusion_constant_in_culture_media  diffusion_constant_in_air  diffusion_constant_near_cells
-o2    300              0.1                                  0.1                        0.1
+o2    300              0                                    0.1                        0.1
 
 CELLS
 name       initial_energy  food_uptake  food_uptake_efficiency  division_threshold  division_distance  death_threshold  metabolic_energy  growth_type  g0_factor  g0_threshold  branching_probability  division_direction_deviation  initial_cell_number  initial_cell_deviation  initial_population_center(x,y)

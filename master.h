@@ -108,6 +108,7 @@ public:
             s >> std::skipws >> z;
             s >> std::skipws >> t;
             s >> std::skipws >> agar_height;
+            agar_height-=1;
             getline(fin,line,'\n');
         }
         occupancy_space.resize(x*y*z);
@@ -143,9 +144,39 @@ public:
         int mat_size = plate->x*plate->y*plate->z;
         laplace_mat.resize(mat_size,mat_size);
         density_space.resize(mat_size);
+        init_matrices(plate, mat_size);
     }
 
     ~Nutrient(){}
+
+    void init_matrices(Plate* plate, int mat_size){
+        std::vector<Eigen::Triplet<float>> laplace_triplet_list;
+        laplace_triplet_list.reserve(7*mat_size);
+        density_space.reserve(plate->x*plate->y*((diff_const_agar>0)*plate->agar_height+(diff_const_air>0)*(plate->z-plate->agar_height))); //big brain move
+
+        for(int x=0; x<plate->x; x++){
+            for(int y=0; y<plate->y; y++){
+                for(int z=0; z<plate->z; z++){
+                    float counter = 0;
+                    float diff_const = (z<=plate->agar_height)*diff_const_agar + (z>plate->agar_height)*diff_const_air;
+                    float diff_const_up = (z+1<=plate->agar_height)*diff_const_agar + (z+1>plate->agar_height)*diff_const_air;
+                    float diff_const_down = (z-1<=plate->agar_height)*diff_const_agar + (z-1>plate->agar_height)*diff_const_air;
+                    if(diff_const!=0){
+                        if(x!=((plate->x)-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),(x+1)+(plate->x)*(y+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+                        if(x!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),(x-1)+(plate->x)*(y+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+                        if(y!=((plate->y)-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*((y+1)+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+                        if(y!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*((y-1)+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+                        if(z!=((plate->z)-1) && diff_const_up!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*(z+1)),-1*diff_const));counter+=diff_const;}
+                        if(z!=0 && diff_const_down!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*(z-1)),-1*diff_const));counter+=diff_const;}
+                        laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*z),counter));
+
+                        density_space.insert(x+(plate->x)*(y+(plate->y)*z)) = init_density;
+                    }
+                }
+            }
+        }
+       laplace_mat.setFromTriplets(laplace_triplet_list.begin(),laplace_triplet_list.end());
+    }
 };
 
 class Cells{

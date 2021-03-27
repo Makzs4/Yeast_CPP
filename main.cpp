@@ -19,11 +19,11 @@ int main()
 
  //}
 
- std::cout << nutrients[1].laplace_mat.size() << std::endl;
- //std::cout << plate->dt << std::endl;
+//std::cout << nutrients[1].laplace_mat.size() << std::endl;
+//std::cout << nutrients[0].name << std::endl;
+//std::cout << nutrients[0].laplace_mat.coeff(0,1) << std::endl;
 
- //eigen_handling_test();
- eigen_handling_test();
+//eigen_handling_test();
 
  //{---------------------------------------------Cleanup----------------------------------------------
  delete draw;
