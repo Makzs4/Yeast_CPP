@@ -24,6 +24,14 @@ int main()
 //std::cout << nutrients[0].laplace_mat.coeff(0,1) << std::endl;
 
 //eigen_handling_test();
+int mat_size = plate->x*plate->y*plate->z;
+std::cout << "Laplacian operator matrix" << std::endl;
+for(int i=0;i<mat_size;i++){
+    for(int j=0;j<mat_size;j++){
+        std::cout << nutrients[0].laplace_mat.coeff(i,j) << ' ';
+    }
+    std::cout << std::endl;
+}
 
  //{---------------------------------------------Cleanup----------------------------------------------
  delete draw;

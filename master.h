@@ -86,12 +86,17 @@ public:
     int dt;
     int dx;
     int diff_cnt;
+    std::string diff_type;
     int x;
     int y;
     int z;
     int t;
     int agar_height;
     boost::dynamic_bitset<> occupancy_space;
+    std::map<std::string, std::vector<std::array<int,3>>> neighbours {
+        {"Moore",{{-1,-1,-1},{0,-1,-1},{1,-1,-1},{-1,0,-1},{0,0,-1},{1,0,-1},{-1,1,-1},{0,1,-1},{1,1,-1},{-1,-1,0},{0,-1,0},{1,-1,0},{-1,0,0},{1,0,0},{-1,1,0},{0,1,0},{1,1,0},{-1,-1,1},{0,-1,1},{1,-1,1},{-1,0,1},{0,0,1},{1,0,1},{-1,1,1},{0,1,1},{1,1,1}}},
+        {"Neumann",{{0,0,-1},{0,0,1},{-1,0,0},{1,0,0},{0,-1,0},{0,1,0}}}
+    };
 
     Plate(){}
 
@@ -103,6 +108,7 @@ public:
             s >> std::skipws >> dt;
             s >> std::skipws >> dx;
             s >> std::skipws >> diff_cnt;
+            s >> std::skipws >> diff_type;
             s >> std::skipws >> x;
             s >> std::skipws >> y;
             s >> std::skipws >> z;
@@ -162,14 +168,20 @@ public:
                     float diff_const_up = (z+1<=plate->agar_height)*diff_const_agar + (z+1>plate->agar_height)*diff_const_air;
                     float diff_const_down = (z-1<=plate->agar_height)*diff_const_agar + (z-1>plate->agar_height)*diff_const_air;
                     if(diff_const!=0){
-                        if(x!=((plate->x)-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),(x+1)+(plate->x)*(y+(plate->y)*z),-1*diff_const));counter+=diff_const;}
-                        if(x!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),(x-1)+(plate->x)*(y+(plate->y)*z),-1*diff_const));counter+=diff_const;}
-                        if(y!=((plate->y)-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*((y+1)+(plate->y)*z),-1*diff_const));counter+=diff_const;}
-                        if(y!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*((y-1)+(plate->y)*z),-1*diff_const));counter+=diff_const;}
-                        if(z!=((plate->z)-1) && diff_const_up!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*(z+1)),-1*diff_const));counter+=diff_const;}
-                        if(z!=0 && diff_const_down!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*(z-1)),-1*diff_const));counter+=diff_const;}
+//                        if(x!=((plate->x)-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),(x+1)+(plate->x)*(y+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+//                        if(x!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),(x-1)+(plate->x)*(y+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+//                        if(y!=((plate->y)-1)){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*((y+1)+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+//                        if(y!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*((y-1)+(plate->y)*z),-1*diff_const));counter+=diff_const;}
+//                        if(z!=((plate->z)-1) && diff_const_up!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*(z+1)),-1*diff_const));counter+=diff_const;}
+//                        if(z!=0 && diff_const_down!=0){laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*(z-1)),-1*diff_const));counter+=diff_const;}
+//                        laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*z),counter));
+                        for(auto i : plate->neighbours[plate->diff_type]){
+                            if((x+i[0]<=(plate->x)-1) && (x+i[0]>=0) && (y+i[1]<=(plate->y)-1) && (y+i[1]>=0) && (z+i[2]<=(plate->z)-1) && (z+i[2]>=0) && !((i[2]==1)*(diff_const_up==0)) && !((i[2]==-1)*(diff_const_down==0))){
+                                laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+i[0]+(plate->x)*(y+i[1]+(plate->y)*(z+i[2])),-1*diff_const));
+                                counter+=diff_const;
+                            }
+                        }
                         laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*z),counter));
-
                         density_space.insert(x+(plate->x)*(y+(plate->y)*z)) = init_density;
                     }
                 }
