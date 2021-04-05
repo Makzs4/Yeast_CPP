@@ -33,6 +33,7 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="Eigen_handling_test.cpp" />
+		<Unit filename="MathGL_handling_test.cpp" />
 		<Unit filename="Valarray_handling_test.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="main.h" />

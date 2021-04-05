@@ -6,5 +6,6 @@ void read_in (Plate** plate, Draw** draw, std::vector<Nutrient>& nutrients, std:
 // delete later!
 void valarray_handling_test();
 void eigen_handling_test();
+int run_mathgl_test(Plate** plate, Eigen::SparseVector<float> *d);
 
 #endif // MAIN_H_INCLUDED
