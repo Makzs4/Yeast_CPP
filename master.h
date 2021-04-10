@@ -3,7 +3,7 @@
 
 #define _USE_MATH_DEFINES
 
-//{-----------------------------------Libraries-----------------------------------
+//{--------------------------------------------------Libraries--------------------------------------------------
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -13,18 +13,16 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <memory>
 #include <Eigen/SparseCore>
 #include <boost/dynamic_bitset.hpp>
-
-
 #include <mgl2/fltk.h>
-#include <mgl2/mgl.h>
 
 // delete if unused!
 #include <valarray>
 //}
 
-//{-----------------------------------Functors-----------------------------------
+//{--------------------------------------------------Functors--------------------------------------------------
 class Valmatrix {
 public:
  std::valarray<double> data;
@@ -61,30 +59,7 @@ public:
 
 //}
 
-//{-----------------------------------Classes------------------------------------
-class Draw{
-public:
-    int is_draw;
-    int steps;
-    int resolution;
-
-    Draw(){}
-
-    Draw(std::ifstream& fin, std::string& line){
-        fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        getline(fin,line,'\n');
-        while(!line.empty()){
-            std::stringstream s(line);
-            s >> std::skipws >> is_draw;
-            s >> std::skipws >> steps;
-            s >> std::skipws >> resolution;
-            getline(fin,line,'\n');
-        }
-    }
-
-    ~Draw(){}
-};
-
+//{--------------------------------------------------Classes--------------------------------------------------
 class Plate{
 public:
     int dt;
@@ -167,9 +142,9 @@ public:
         laplace_triplet_list.reserve(7*(plate->plate_size));
         density_space.reserve(plate->x*plate->y*((diff_const_agar>0)*plate->agar_height+(diff_const_air>0)*(plate->z-plate->agar_height))); //big brain move
 
-        for(int x=0; x<plate->x; x++){
-            for(int y=0; y<plate->y; y++){
-                for(int z=0; z<plate->z; z++){
+        for(auto x=0; x<plate->x; x++){
+            for(auto y=0; y<plate->y; y++){
+                for(auto z=0; z<plate->z; z++){
                     float counter = 0;
                     float diff_const = (z<=plate->agar_height)*diff_const_agar + (z>plate->agar_height)*diff_const_air;
                     float diff_const_up = (z+1<=plate->agar_height)*diff_const_agar + (z+1>plate->agar_height)*diff_const_air;
@@ -253,6 +228,102 @@ public:
         ~Species(){}
     };
 };
+
+class mglEigenVec : public mglDataA{
+public:
+  long nx;
+  long ny;
+  long nz;
+  Eigen::SparseVector<float>* a = nullptr;
+
+  inline mglEigenVec(){}
+
+  inline mglEigenVec(Plate* plate, Eigen::SparseVector<float>* d)
+  { nx=plate->x; ny=plate->y; nz=plate->z; a=d; }
+
+  ~mglEigenVec(){}
+
+  inline long GetNx() const { return nx; }
+  inline long GetNy() const { return ny; }
+  inline long GetNz() const { return nz; }
+
+  inline mreal Maximal() const  { return (a->coeffs()).maxCoeff(); }
+  inline mreal Minimal() const  { return /*(a->coeffs()).minCoeff()*/0; }
+
+protected:
+  inline mreal v(long i,long j=0,long k=0) const
+  { return a->coeff(i+nx*(j+ny*k)); }
+
+  inline mreal vthr(long i) const
+  { return a->coeff(i); }
+
+  inline mreal dvx(long i,long j=0,long k=0) const
+  { long i0=i+nx*(j+ny*k);
+    float res=i>0? (i<nx-1? (a->coeff(i0+1)-a->coeff(i0-1))/2.:a->coeff(i0)-a->coeff(i0-1)) : a->coeff(i0+1)-a->coeff(i0);
+    return res;  }
+
+  inline mreal dvy(long i,long j=0,long k=0) const
+  { long i0=i+nx*(j+ny*k);
+    float res=j>0? (j<ny-1? (a->coeff(i0+nx)-a->coeff(i0-nx))/2.:a->coeff(i0)-a->coeff(i0-nx)) : a->coeff(i0+nx)-a->coeff(i0);
+    return res;  }
+
+  inline mreal dvz(long i,long j=0,long k=0) const
+  { long i0=i+nx*(j+ny*k), n=nx*ny;
+    float res=k>0? (k<nz-1? (a->coeff(i0+n)-a->coeff(i0-n))/2.:a->coeff(i0)-a->coeff(i0-n)) : a->coeff(i0+n)-a->coeff(i0);
+    return res;  }
+
+  inline mreal valueD(mreal x,mreal y=0,mreal z=0,mreal *dx=0,mreal *dy=0,mreal *dz=0) const
+  { return 0;  }
+
+  inline mreal value(mreal x,mreal y=0,mreal z=0) const
+  { return 0;  }
+
+};
+
+class yeastDraw: public mglDraw{
+public:
+    int is_draw;
+    int steps;
+    int resolution;
+    std::vector<mglEigenVec> nutrients;
+
+    yeastDraw(){}
+
+    yeastDraw(std::ifstream& fin, std::string& line, Plate* p, std::vector<Nutrient>& _nutrients){
+        fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        getline(fin,line,'\n');
+        while(!line.empty()){
+            std::stringstream s(line);
+            s >> std::skipws >> is_draw;
+            s >> std::skipws >> steps;
+            s >> std::skipws >> resolution;
+            getline(fin,line,'\n');
+        }
+
+        nutrients.reserve(_nutrients.size()); //Hell yeah!
+        for(auto& n:_nutrients){
+            nutrients.emplace_back(p, &n.density_space);
+        }
+    }
+
+    ~yeastDraw(){}
+
+    int Draw(mglGraph *gr)
+    {
+     gr->Title("MathGL Demo");
+     gr->Rotate(60,40);
+     gr->Alpha(true);
+     gr->Box();
+     gr->Cloud(nutrients[0],"BBBBBB{xFFFFFF00}BbcyrR");//BBBBBB{xFFFFFF00}BbcyrR
+     return 0;
+    }
+
+    int Window() {
+        mglFLTK gr(this, "MathGL run test");
+        return gr.Run();
+    }
+};
+
 //}
 
 #endif // LIBRARIES_H_INCLUDED

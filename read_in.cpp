@@ -1,6 +1,6 @@
 #include "master.h"
 
-void read_in (Plate** plate, Draw** draw, std::vector<Nutrient>& nutrients, std::vector<Cells::Species>& species, std::string filename)
+void read_in (Plate** plate, yeastDraw** draw, std::vector<Nutrient>& nutrients, std::vector<Cells::Species>& species, std::string filename)
 {
  std::ifstream fin;
  std::string line;
@@ -10,7 +10,7 @@ void read_in (Plate** plate, Draw** draw, std::vector<Nutrient>& nutrients, std:
     while (getline(fin,line,'\n'))
      {
         if(line == "VISUALISATION"){
-           *draw = new Draw(fin, line);
+           *draw = new yeastDraw(fin, line, *plate, nutrients);
         }
         else if(line == "PLATE"){
            *plate = new Plate(fin, line);
