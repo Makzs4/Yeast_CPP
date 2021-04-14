@@ -280,7 +280,7 @@ protected:
 
 };
 
-class yeastDraw: public mglDraw{
+class yeastDraw : public mglDraw{
 public:
     int is_draw;
     int steps;
@@ -308,19 +308,17 @@ public:
 
     ~yeastDraw(){}
 
-    int Draw(mglGraph *gr)
-    {
+    int Draw(mglGraph* gr){
+     Agar(gr);
+     return 0;
+    }
+
+    void Agar(mglGraph* gr){
      gr->Title("MathGL Demo");
      gr->Rotate(60,40);
      gr->Alpha(true);
      gr->Box();
      gr->Cloud(nutrients[0],"BBBBBB{xFFFFFF00}BbcyrR");//BBBBBB{xFFFFFF00}BbcyrR
-     return 0;
-    }
-
-    int Window() {
-        mglFLTK gr(this, "MathGL run test");
-        return gr.Run();
     }
 };
 
