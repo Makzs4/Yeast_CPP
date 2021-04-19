@@ -22,7 +22,7 @@
 #include <valarray>
 //}
 
-//{--------------------------------------------------Functors--------------------------------------------------
+//{--------------------------------------------------Functors-------------------------------------------------
 class Valmatrix {
 public:
  std::valarray<double> data;
@@ -59,6 +59,16 @@ public:
 
 //}
 
+//{-------------------------------------------------Functions-------------------------------------------------
+inline bool is_on_plate(int& x, int& y, int& z, int& max_x, int& max_y, int& max_z, std::array<int,3> (&i)){
+ return((x+i[0]<=max_x-1) && (x+i[0]>=0) && (y+i[1]<=max_y-1) && (y+i[1]>=0) && (z+i[2]<=max_z-1) && (z+i[2]>=0));
+}
+//inline bool is_on_plate(int& i, int& max_i, int& j){
+// return((i+j>0) && (i+j<=max_i));
+//}
+
+//}
+
 //{--------------------------------------------------Classes--------------------------------------------------
 class Plate{
 public:
@@ -79,6 +89,12 @@ public:
                   {-1,-1,1},{0,-1,1},{1,-1,1},{-1,0,1},{0,0,1},{1,0,1},{-1,1,1},{0,1,1},{1,1,1}}},
         {"Neumann",{{0,0,-1},{0,0,1},{-1,0,0},{1,0,0},{0,-1,0},{0,1,0}}}
     };
+//    std::map<std::string, std::vector<int>> neighbours {
+//        {"Moore",{-1-x-x*y, 0-x-x*y, 1-x-x*y, -1+0-x*y, 0+0-x*y, 1+0-x*y, -1+x-x*y, 0+x-x*y, 1+x-x*y,
+//                  -1-x+0, 0-x+0, 1-x+0, -1+0+0, 1+0+0, -1+x+0, 0+x+0, 1+x+0,
+//                  -1-x+x*y, 0-x+x*y, 1-x+x*y, -1+0+x*y, 0+0+x*y, 1+0+x*y, -1+x+x*y, 0+x+x*y, 1+x+x*y}},
+//        {"Neumann",{0+0-x*y, 0+0+x*y, -1+0+0, 1+0+0, 0-x+0, 0+x+0}}
+//    };
 
     Plate(){}
 
@@ -113,12 +129,15 @@ public:
     float diff_const_agar; //diffusion constant in the agar
     float diff_const_air; //diffusion constant in air
     float diff_const_cell; //diffusion constant near cells, should be vector?
-    Eigen::SparseMatrix<float> laplace_mat;
     Eigen::SparseVector<float> density_space;
+    Eigen::SparseMatrix<float> laplace_mat;
+    std::vector<Eigen::Triplet<float>> laplace_triplet_list;
+    int laplace_nutrient_size; //stores the size of laplace_triplet_list after the initialization
+                               //laplace_triplet_list's elements will be erased after this point in each update
 
     Nutrient(){}
 
-    Nutrient(std::ifstream& fin, std::string& line, Plate* plate){
+    Nutrient(std::ifstream& fin, std::string& line, Plate*& plate){
         fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         getline(fin,line,'\n');
         while(!line.empty()){
@@ -138,7 +157,7 @@ public:
     ~Nutrient(){}
 
     void init_matrices(Plate* plate){
-        std::vector<Eigen::Triplet<float>> laplace_triplet_list;
+//        std::vector<Eigen::Triplet<float>> laplace_triplet_list;
         laplace_triplet_list.reserve(7*(plate->plate_size));
         density_space.reserve(plate->x*plate->y*((diff_const_agar>0)*plate->agar_height+(diff_const_air>0)*(plate->z-plate->agar_height))); //big brain move
 
@@ -151,7 +170,7 @@ public:
                     float diff_const_down = (z-1<=plate->agar_height)*diff_const_agar + (z-1>plate->agar_height)*diff_const_air;
                     if(diff_const!=0){
                         for(auto i : plate->neighbours[plate->diff_type]){
-                            if((x+i[0]<=(plate->x)-1) && (x+i[0]>=0) && (y+i[1]<=(plate->y)-1) && (y+i[1]>=0) && (z+i[2]<=(plate->z)-1) && (z+i[2]>=0) && !((i[2]==1)&&(diff_const_up==0)) && !((i[2]==-1)&&(diff_const_down==0))){
+                            if(is_on_plate(x,y,z,plate->x,plate->y,plate->z,i) && !((i[2]==1)&&(diff_const_up==0)) && !((i[2]==-1)&&(diff_const_down==0))){
                                 laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+i[0]+(plate->x)*(y+i[1]+(plate->y)*(z+i[2])),-1*diff_const));
                                 counter+=diff_const;
                             }
@@ -162,7 +181,26 @@ public:
                 }
             }
         }
+
+//        for(auto i=0; i<plate->plate_size; i++){
+//            float counter = 0;
+//            int z= i/(plate->x*plate->y);
+//            float diff_const = (z<=plate->agar_height)*diff_const_agar + (z>plate->agar_height)*diff_const_air;
+//            float diff_const_up = (z+1<=plate->agar_height)*diff_const_agar + (z+1>plate->agar_height)*diff_const_air;
+//            float diff_const_down = (z-1<=plate->agar_height)*diff_const_agar + (z-1>plate->agar_height)*diff_const_air;
+//            if(diff_const!=0){
+//                for(auto j : plate->neighbours[plate->diff_type]){
+//                    if(is_on_plate(i, plate->plate_size, j) && !((i[2]==1)&&(diff_const_up==0)) && !((i[2]==-1)&&(diff_const_down==0))){
+//                        laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+i[0]+(plate->x)*(y+i[1]+(plate->y)*(z+i[2])),-1*diff_const));
+//                        counter+=diff_const;
+//                    }
+//                }
+//                laplace_triplet_list.push_back(Eigen::Triplet<float>(x+(plate->x)*(y+(plate->y)*z),x+(plate->x)*(y+(plate->y)*z),counter));
+//                density_space.insert(x+(plate->x)*(y+(plate->y)*z)) = init_density;
+//            }
+
        laplace_mat.setFromTriplets(laplace_triplet_list.begin(),laplace_triplet_list.end());
+       laplace_nutrient_size = laplace_triplet_list.size();
     }
 };
 
@@ -197,7 +235,7 @@ public:
 
         Species(){}
 
-        Species(std::ifstream& fin, std::string& line, Plate* plate){
+        Species(std::ifstream& fin, std::string& line, Plate*& plate){
             fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             getline(fin,line,'\n');
             while(!line.empty()){
@@ -285,11 +323,14 @@ public:
     int is_draw;
     int steps;
     int resolution;
+    int* x = nullptr;
+    int* y = nullptr;
+    int* z = nullptr;
     std::vector<mglEigenVec> nutrients;
 
     yeastDraw(){}
 
-    yeastDraw(std::ifstream& fin, std::string& line, Plate* p, std::vector<Nutrient>& _nutrients){
+    yeastDraw(std::ifstream& fin, std::string& line, Plate*& p, std::vector<Nutrient>& _nutrients){
         fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         getline(fin,line,'\n');
         while(!line.empty()){
@@ -304,6 +345,10 @@ public:
         for(auto& n:_nutrients){
             nutrients.emplace_back(p, &n.density_space);
         }
+
+        x = &(p->x);
+        y = &(p->y);
+        z = &(p->z);
     }
 
     ~yeastDraw(){}
@@ -316,6 +361,7 @@ public:
     void Agar(mglGraph* gr){
      gr->Title("MathGL Demo");
      gr->Rotate(60,40);
+     gr->Aspect(*x,*y,*z);
      gr->Alpha(true);
      gr->Box();
      gr->Cloud(nutrients[0],"BBBBBB{xFFFFFF00}BbcyrR");//BBBBBB{xFFFFFF00}BbcyrR
@@ -323,5 +369,6 @@ public:
 };
 
 //}
+
 
 #endif // LIBRARIES_H_INCLUDED
