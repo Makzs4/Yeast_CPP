@@ -1,9 +1,10 @@
 #include "master.h"
 
-void diffusion(int& diff_cnt, std::vector<Nutrient>& nutrients){
+void diffusion(int& diff_cnt, std::vector<Nutrient>& nutrients, mglFLTK& gr){
     for(auto& n:nutrients){
         for(int t=0; t<diff_cnt; t++){
             n.density_space -= n.laplace_mat*n.density_space;
+            //gr.Update();
         }
    }
 }

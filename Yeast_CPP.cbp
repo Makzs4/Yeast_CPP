@@ -32,9 +32,10 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="Eigen_handling_test.cpp" />
-		<Unit filename="MathGL_handling_test.cpp" />
-		<Unit filename="Valarray_handling_test.cpp" />
+		<Unit filename="Test_Eigen_handling.cpp" />
+		<Unit filename="Test_Hashtable.cpp" />
+		<Unit filename="Test_MathGL_handling.cpp" />
+		<Unit filename="Test_Valarray_handling.cpp" />
 		<Unit filename="diffusion.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="main.h" />

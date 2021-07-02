@@ -13,9 +13,14 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <array>
+#include <unordered_map>
 #include <memory>
+#include <cstdlib>
+#include <ctime>
 #include <Eigen/SparseCore>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/functional/hash.hpp>
 #include <mgl2/fltk.h>
 
 // delete if unused!
@@ -65,8 +70,35 @@ inline bool is_on_plate(int& x, int& y, int& z, int& max_x, int& max_y, int& max
 }
 //inline bool is_on_plate(int& i, int& max_i, int& j){
 // return((i+j>0) && (i+j<=max_i));
+
 //}
 
+//{--------------------------------------------------Structs--------------------------------------------------
+struct GridCell{
+    int x, y, z;
+
+    GridCell(int x, int y, int z){
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    }
+
+    ~GridCell(){}
+
+    bool operator==(const GridCell& other) const{
+        return x == other.x && y == other.y && z == other.z;
+    }
+};
+
+struct hash_fn{
+    std::size_t operator()(const GridCell& other) const{
+        std::size_t seed = 0;
+        boost::hash_combine(seed, other.x);
+        boost::hash_combine(seed, other.y);
+        boost::hash_combine(seed, other.z);
+        return seed;
+    }
+};
 //}
 
 //{--------------------------------------------------Classes--------------------------------------------------
@@ -116,7 +148,7 @@ public:
             plate_size = x*y*z;
             getline(fin,line,'\n');
         }
-        occupancy_space.resize(x*y*z);
+        occupancy_space.resize(plate_size);
     }
 
     ~Plate(){}
@@ -206,18 +238,14 @@ public:
 
 class Cells{
 public:
-    Cells(){}
-
-    ~Cells(){}
-
-    //matrices for all cells, like positions and such
-
     class Species{
     public:
+        ///initial properties of cells
         std::string name;
         float init_E; //initial energy
         float div_threshold; //division threshold (in terms of energy)
-        float div_distance; //division distance
+        float cell_radius; //size of the spherical agent
+        float sqrd_radius; //squared cell radius for efficient distance comparions
         float death_threshold; //death threshold (in terms of energy)
         float g0_factor; //penalty in g0 state (constant multiplier)
         float g0_threshold; //g0 threshold (in terms of energy)
@@ -225,7 +253,7 @@ public:
         float growth_type; //type of colony
         float branch_prob; //branching probability
         float div_dir_dev; //division direction deviation
-        float init_cell_num; //initial cell number
+        int init_cell_num; //initial cell number
         float init_cell_dev; //initial cell deviation
         float init_pos_x;
         float init_pos_y;
@@ -245,7 +273,8 @@ public:
                 s >> std::skipws >> food_uptake;
                 s >> std::skipws >> food_uptake_eff;
                 s >> std::skipws >> div_threshold;
-                s >> std::skipws >> div_distance;
+                s >> std::skipws >> cell_radius;
+                sqrd_radius = pow(cell_radius,2);
                 s >> std::skipws >> death_threshold;
                 s >> std::skipws >> metab_E;
                 s >> std::skipws >> growth_type;
@@ -258,13 +287,231 @@ public:
                 s >> std::skipws >> init_cell_dev;
                 s >> std::skipws >> init_pos_x;
                 s >> std::skipws >> init_pos_y;
-                init_pos_z = plate->agar_height;
+                init_pos_z = plate->agar_height+cell_radius;
                 getline(fin,line,'\n');
             }
         }
 
         ~Species(){}
     };
+
+    class Agent{
+    public:
+        Cells::Species *species; //pointer to species of the agent to acces it's attributes
+        float energy; //energy
+        bool can_divide;
+        std::array<float,3> pos; //position
+        std::vector<int> occupied_uniform_grids; //GridCells which the agent occupies
+        std::vector<int> occupied_density_space; // density space matrix cells which the agent occupies
+
+        Agent(){}
+
+        Agent(Plate *&plate, Cells &cells, Cells::Species *species, std::array<float,3> pos){
+            this->species = species;
+            this->energy = species->init_E;
+            this->can_divide = (energy > species->div_threshold);
+            this->pos = pos;
+
+            //calculate occupied_uniform_grids
+            occupied_uniform_grids = occupied_grid_cells({0,0,plate->agar_height},cells.conversion_factor,cells.gridcell_size,cells.gridmap_x,cells.gridmap_y);
+
+            //calculate occupied_density_space
+            occupied_density_space = occupied_grid_cells({0,0,0},1,1,plate->x,plate->y);
+        }
+
+        //shallow copy constructor
+        Agent(const Cells::Agent &old_agent){
+            energy = old_agent.energy;
+            can_divide = old_agent.can_divide;
+            pos = old_agent.pos;
+            occupied_uniform_grids = old_agent.occupied_uniform_grids;
+            occupied_density_space = old_agent.occupied_density_space;
+//            species = new Cells::Species;
+//            *species = *old_agent.species;
+            species = old_agent.species;
+        }
+
+        //move constructor
+        Agent(Cells::Agent &&old_agent){
+            energy = old_agent.energy;
+            can_divide = old_agent.can_divide;
+            pos = old_agent.pos;
+            occupied_uniform_grids = old_agent.occupied_uniform_grids;
+            occupied_density_space = old_agent.occupied_density_space;
+            species = old_agent.species;
+            old_agent.species = nullptr;
+        }
+
+        //~Agent(){}
+        ~Agent(){species = nullptr;}
+
+        std::vector<int> occupied_grid_cells(std::array<int,3> e, float c, int d, int length, int width){
+
+            std::vector<int> grids;
+            float r = species->cell_radius;
+
+            //bounding box
+            std::array<std::array<float,3>,2> bounding_box = {{{pos[0]-r,pos[1]-r,pos[2]-r},{pos[0]+r,pos[1]+r,pos[2]+r}}};
+            std::array<std::array<int,3>,2> grid_corners;
+
+            //get the grid cells in which box corners lie
+            std::transform(bounding_box.begin(),bounding_box.end(),grid_corners.begin(),[&c, &e](std::array<float,3> &n)
+                          {
+                              std::array<int,3> m;
+                              for(auto i=0;i<3;++i){
+                                    m[i] = static_cast<int>(c*(n[i] - e[i]));
+                              }
+                              return m;
+                          });
+
+            //check distance between grid cells and agent center
+            for(int z=grid_corners[0][2];z<=grid_corners[1][2];++z){
+                for(int y=grid_corners[0][1];y<=grid_corners[1][1];++y){
+                    int x_min = grid_corners[0][0];
+                    int x_max = grid_corners[1][0];
+//Expensive trimming of bounding box NEEDS FIXING!!! grid_corners ARE ALREADY TRANSFORMED, BUT TRIMMING ASSUMES ABSOLUTE DISTANCES!!!
+//                    if(1.415*r>d){
+//                        std::cout<<"find_x_min started"<<std::endl;
+//                        find_x_min(x_min, y, z, x_max, d);
+//                        //x_min was not found -> no grid cells belong to agent along this y,z -> skip
+//                        if(x_min == x_max){
+//                            continue;
+//                        }
+//
+//                        std::cout<<"find_x_max started"<<std::endl;
+//                        find_x_max(x_min, y, z, x_max, d);
+//                    }
+
+                    //save (each grid from x_min to x_max
+                    for(auto x=x_min;x<=x_max;++x){
+                        grids.push_back(x+length*(y+width*z));
+                    }
+                }
+            }
+            return grids;
+        }
+
+        inline void find_x_min(int &x_min, int &y, int &z, int &x_max, int &d){
+            while(x_min != x_max){
+                std::array<double,3> midpoint = {x_min+d*0.5,y+d*0.5,z+d*0.5};
+                std::array<double,3> shifted_center = {pos[0]-midpoint[0],pos[1]-midpoint[1],pos[2]-midpoint[2]};
+                std::array<double,3> shifted_corner = {x_min+d-midpoint[0],y+d-midpoint[1],z+d-midpoint[2]};
+                float sqrd_dist = pow(std::max(0.0,std::abs(shifted_center[0])-shifted_corner[0]),2) +
+                                  pow(std::max(0.0,std::abs(shifted_center[1])-shifted_corner[1]),2) +
+                                  pow(std::max(0.0,std::abs(shifted_center[2])-shifted_corner[2]),2);
+
+                if(sqrd_dist<species->sqrd_radius){
+                    return;
+                }
+
+                x_min += d;
+            }
+        }
+
+        inline void find_x_max(int &x_min, int &y, int &z, int &x_max, int &d){
+            while(x_min != x_max){
+                std::array<double,3> midpoint = {x_max-d*0.5,y+d*0.5,z+d*0.5};
+                std::array<double,3> shifted_center = {pos[0]-midpoint[0],pos[1]-midpoint[1],pos[2]-midpoint[2]};
+                std::array<double,3> shifted_corner = {x_max-midpoint[0],y+d-midpoint[1],z+d-midpoint[2]};
+                float sqrd_dist = pow(std::max(0.0,std::abs(shifted_center[0])-shifted_corner[0]),2) +
+                                  pow(std::max(0.0,std::abs(shifted_center[1])-shifted_corner[1]),2) +
+                                  pow(std::max(0.0,std::abs(shifted_center[2])-shifted_corner[2]),2);
+
+                if(sqrd_dist<species->sqrd_radius){
+                    return;
+                }
+
+                x_max -= d;
+            }
+        }
+    };
+
+    std::list<Cells::Agent> agent_list;
+    std::unordered_multimap<int, Cells::Agent*> agent_gridmap;
+    int gridmap_size;
+    int gridmap_x, gridmap_y, gridmap_z;
+    int gridcell_size; //size of a grid cell x, y and z-wise
+    float conversion_factor;
+
+    Cells(){}
+
+    Cells(Plate*& plate, std::vector<Cells::Species>& species){
+        size_of_gridcell(species);//determine gridcell_size based on cell radii
+
+        conversion_factor = 1/(float)gridcell_size;
+
+        num_of_gridcells(plate); //determine gridmap_size and dimensions based on plate and size of one grid
+
+        agent_gridmap.reserve(gridmap_size);//reserve space for agent_gridmap
+    }
+
+    ~Cells(){}
+
+    void size_of_gridcell(std::vector<Cells::Species>& species){
+        auto n = std::max_element(species.begin(), species.end(),
+                                  [](const Cells::Species& a, const Cells::Species& b)
+                                  {return a.cell_radius < b.cell_radius;});
+
+        gridcell_size = 3*ceil(2*n->cell_radius);
+    }
+
+    void num_of_gridcells(Plate*& plate){
+        gridmap_x = ceil(plate->x*conversion_factor);
+        gridmap_y = ceil(plate->y*conversion_factor);
+        gridmap_z = ceil((plate->z-plate->agar_height-1)*conversion_factor);
+        gridmap_size = gridmap_x*gridmap_y*gridmap_z;
+    }
+
+    inline void fill_table(Cells::Agent *yeast){
+        for(auto i:yeast->occupied_uniform_grids){
+            agent_gridmap.emplace(i,yeast);
+        }
+    }
+
+    inline void init_positions(Plate*& plate, Cells::Species *s){
+        std::vector<std::array<float,2>> positions;
+        float x = s->init_pos_x + s->init_cell_dev * (float) rand()/RAND_MAX;
+        float y = s->init_pos_y + s->init_cell_dev * (float) rand()/RAND_MAX;
+        positions.push_back({x,y});
+        Cells::Agent yeast(plate, *this, s, {x,y,s->init_pos_z});
+        agent_list.push_back(yeast);
+        fill_table(&(agent_list.back()));
+//        std::array<float,3> pos = {x,y,s->init_pos_z};
+//        agent_list.emplace_back(plate, *this, s, pos);
+        if(s->init_cell_num==1){return;}
+
+        int counter = 1;
+        float d = s->cell_radius*2;
+        while(counter < s->init_cell_num){
+            //get a trial point
+            float x = s->init_pos_x + s->init_cell_dev * (float) rand()/RAND_MAX;
+            float y = s->init_pos_y + s->init_cell_dev * (float) rand()/RAND_MAX;
+
+            //see how close it is to existing points
+            std::vector<float> dist;
+            for(auto i:positions){
+                float sqrd_dist = pow(x-i[0],2)+pow(y-i[1],2);
+                dist.push_back(sqrd_dist);
+            }
+            float min_dist = *min_element(dist.begin(),dist.end());
+            if(min_dist >= d){
+                positions.push_back({x,y});
+                Cells::Agent yeast(plate, *this, s, {x,y,s->init_pos_z});
+                agent_list.push_back(yeast);
+                fill_table(&(agent_list.back()));
+//                std::array<float,3> pos = {x,y,s->init_pos_z};
+//                agent_list.emplace_back(plate, *this, s, pos);
+                //put it in table
+                counter += 1;
+            }
+        }
+    }
+
+    void init_agents(Plate*& plate, std::vector<Cells::Species>& species){
+        for(auto i:species){
+            init_positions(plate, &i);
+        }
+    }
 };
 
 class mglEigenVec : public mglDataA{
@@ -359,16 +606,18 @@ public:
     }
 
     void Agar(mglGraph* gr){
-     gr->Title("MathGL Demo");
+     //gr->Title("MathGL Demo");
      gr->Rotate(60,40);
-     gr->Aspect(*x,*y,*z);
      gr->Alpha(true);
+     gr->Aspect(*x,*y,*z);
+     gr->SetRange('x',0,*x); gr->SetRange('y',0,*y); gr->SetRange('z',0,*z);gr->SetRange('c',nutrients[0],true);
+     gr->Axis("U");
      gr->Box();
-     gr->Cloud(nutrients[0],"BBBBBB{xFFFFFF00}BbcyrR");//BBBBBB{xFFFFFF00}BbcyrR
+     gr->Cloud(nutrients[0],"BbcyrR");//BBBBBB{xFFFFFF00}BbcyrR {xFFFFFF00}BbcyrR
+     //gr->Colorbar("{xFFFFFF00}BbcyrR>I");
     }
 };
 
 //}
-
 
 #endif // LIBRARIES_H_INCLUDED
