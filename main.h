@@ -5,6 +5,11 @@ void read_in (Plate*& plate, yeastDraw*& draw, std::vector<Nutrient>& nutrients,
 void diffusion(int& diff_cnt, std::vector<Nutrient>& nutrients, mglFLTK& gr);
 void update_laplace(Plate*& plate, std::vector<Nutrient>& nutrients);
 
+//might delete later
+void piramid_diffusion(Plate*& plate);
+void dome_diffusion(Plate*& plate);
+void random_walk_diffusion(Plate*& plate);
+
 // delete later!
 void valarray_handling_test();
 void eigen_handling_test();
