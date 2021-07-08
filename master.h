@@ -475,9 +475,9 @@ public:
     }
 
     void add_agent(Cells::Agent &yeast){
-        agent_list.push_back(yeast);
+        agent_list.push_front(yeast);
         for(auto i:yeast.occupied_uniform_grids){
-            agent_gridmap.emplace(i,&(agent_list.back()));
+            agent_gridmap.emplace(i,&(agent_list.front()));
         }
     }
 

@@ -50,6 +50,11 @@ int main()
         it = cells.agent_list.erase(it);
         --it;
     }
+    if(it==cells.agent_list.begin()){
+        Cells::Agent yeast(plate, cells, &species[1], {15.6,29.2,species[1].init_pos_z});
+        cells.add_agent(yeast);
+        std::cout<<"Added agent: "<<&(*cells.agent_list.begin())<<std::endl;
+    }
  }
 
  std::cout<<cells.agent_gridmap.size()<<std::endl;
@@ -75,6 +80,7 @@ int main()
 
  //{--------------------------------------------------------Cleanup-----------------------------------------------------------
  delete draw;
+ //clean up agents
  delete plate;
  nutrients.clear();
  species.clear();
