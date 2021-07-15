@@ -440,24 +440,46 @@ public:
 
     std::list<Cells::Agent> agent_list;
     std::unordered_multimap<int, Cells::Agent*> agent_gridmap;
+    std::map<Cells::Species*,std::array<std::vector<double>,3>> agent_positions; //will be linked to mglData objects to plot agents
     int gridmap_size;
     int gridmap_x, gridmap_y, gridmap_z;
     int gridcell_size; //size of a grid cell x, y and z-wise
     float conversion_factor;
 
+
     Cells(){}
 
     Cells(Plate*& plate, std::vector<Cells::Species>& species){
         size_of_gridcell(species);//determine gridcell_size based on cell radii
-
         conversion_factor = 1/(float)gridcell_size;
-
-        num_of_gridcells(plate); //determine gridmap_size and dimensions based on plate and size of one grid
-
+        num_of_gridcells(plate); //determine gridmap_size and dimensions based on plate and size of one grid cell
         agent_gridmap.reserve(gridmap_size);//reserve space for agent_gridmap
+        setup_position_container(species);
     }
 
     ~Cells(){}
+
+    void setup_position_container(std::vector<Cells::Species>& species){
+        for(auto &i:species){
+            std::array<std::vector<double>,3> positions;
+            agent_positions[&i] = positions;
+        }
+    }
+
+    void copy_positions(std::list<Cells::Agent>::iterator agent){ //BUG
+        for(size_t i=0;i<agent->pos.size();++i){
+            agent_positions[agent->species][i].push_back(agent->pos[i]);
+            //std::cout<<"species in copy: "<<agent->species<<std::endl;
+        }
+    }
+
+    void clear_positions(){
+        for(auto &position_array:agent_positions){
+            for(auto &position_vector:position_array.second){
+                position_vector.clear();
+            }
+        }
+    }
 
     void size_of_gridcell(std::vector<Cells::Species>& species){
         auto n = std::max_element(species.begin(), species.end(),
@@ -592,14 +614,15 @@ public:
     int is_draw;
     int steps;
     int resolution;
-    int* x = nullptr;
-    int* y = nullptr;
-    int* z = nullptr;
+    int x;
+    int y;
+    int z;
     std::vector<mglEigenVec> nutrients;
+    std::map<Cells::Species*,std::array<mglData,3>> agent_positions; //agent_positions in Cells will be linked to these
 
     yeastDraw(){}
 
-    yeastDraw(std::ifstream& fin, std::string& line, Plate*& p, std::vector<Nutrient>& _nutrients){
+    yeastDraw(std::ifstream& fin, std::string& line, Plate*& p, std::vector<Nutrient>& _nutrients, std::vector<Cells::Species>& species){
         fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         getline(fin,line,'\n');
         while(!line.empty()){
@@ -610,20 +633,41 @@ public:
             getline(fin,line,'\n');
         }
 
+        setup_nutrient_container(p, _nutrients);
+        setup_position_container(species);
+
+        x = p->x;
+        y = p->y;
+        z = p->z;
+    }
+
+    void setup_nutrient_container(Plate*& p, std::vector<Nutrient>& _nutrients){
         nutrients.reserve(_nutrients.size()); //Hell yeah!
         for(auto& n:_nutrients){
             nutrients.emplace_back(p, &n.density_space);
         }
+    }
 
-        x = &(p->x);
-        y = &(p->y);
-        z = &(p->z);
+    void setup_position_container(std::vector<Cells::Species>& species){
+        for(auto &i:species){
+            std::array<mglData,3> positions;
+            agent_positions[&i] = positions;
+        }
+    }
+
+    void link_agent_position(std::map<Cells::Species*,std::array<std::vector<double>,3>>& _agent_positions){
+        for(auto &positions:_agent_positions){
+            for(size_t i=0;i<positions.second.size();++i){
+                agent_positions[positions.first][i].Link(&(positions.second[i])[0],positions.second[i].size());
+            }
+        }
     }
 
     ~yeastDraw(){}
 
     int Draw(mglGraph* gr){
      Agar(gr);
+     YeastCells(gr);
      return 0;
     }
 
@@ -631,12 +675,18 @@ public:
      //gr->Title("MathGL Demo");
      gr->Rotate(60,40);
      gr->Alpha(true);
-     gr->Aspect(*x,*y,*z);
-     gr->SetRange('x',0,*x); gr->SetRange('y',0,*y); gr->SetRange('z',0,*z);gr->SetRange('c',nutrients[0],true);
+     gr->Aspect(x,y,z);
+     gr->SetRange('x',0,x); gr->SetRange('y',0,y); gr->SetRange('z',0,z);gr->SetRange('c',nutrients[0],true);
      gr->Axis("U");
      gr->Box();
      gr->Cloud(nutrients[0],"BbcyrR");//BBBBBB{xFFFFFF00}BbcyrR {xFFFFFF00}BbcyrR
      //gr->Colorbar("{xFFFFFF00}BbcyrR>I");
+    }
+
+    void YeastCells(mglGraph* gr){
+        for(auto &positions:agent_positions){
+            gr->Dots(positions.second[0],positions.second[1],positions.second[2],"y","size 10");
+        }
     }
 };
 

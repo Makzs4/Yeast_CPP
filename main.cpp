@@ -15,7 +15,7 @@ int main()
  read_in(plate, draw, nutrients, species, "3D_parameters.txt");
  Cells cells(plate, species);
  cells.init_agents(plate, species);
-// mglFLTK gr(draw, "MathGL run test");
+ mglFLTK gr(draw, "MathGL run test");
  //}
 
  //{--------------------------------------------------------Testing-----------------------------------------------------------
@@ -29,6 +29,8 @@ int main()
  for(auto& i:cells.agent_list){ //I AM A GOD
     std::cout<<&i<<std::endl;
  }
+
+ cells.clear_positions();
 
  auto a = cells.agent_list.begin(); //dummy example
  a->energy = 0.1;
@@ -50,11 +52,13 @@ int main()
         it = cells.agent_list.erase(it);
         --it;
     }
-    if(it==cells.agent_list.begin()){
-        Cells::Agent yeast(plate, cells, &species[1], {15.6,29.2,species[1].init_pos_z});
-        cells.add_agent(yeast);
-        std::cout<<"Added agent: "<<&(*cells.agent_list.begin())<<std::endl;
-    }
+//    if(it==cells.agent_list.begin()){
+//        Cells::Agent yeast(plate, cells, &species[1], {15.6,29.2,species[1].init_pos_z});
+//        cells.add_agent(yeast);
+//        std::cout<<"Added agent: "<<&(*cells.agent_list.begin())<<std::endl;
+//    }
+    else{cells.copy_positions(it);}
+    std::cout<<&it<<std::endl;
  }
 
  std::cout<<cells.agent_gridmap.size()<<std::endl;
@@ -66,16 +70,33 @@ int main()
  for(auto& i:cells.agent_list){
     std::cout<<&i<<std::endl;
  }
+
+ for(auto& i:cells.agent_positions){
+    std::cout<<i.first<<" "<<i.second[0].size()<<std::endl;
+ }
+
+ draw->link_agent_position(cells.agent_positions);
+
+// std::vector<double> v;
+// mglData a;
+// for(auto i=0;i<10;i++){v.push_back(i);}
+// a.Link(&v[0],v.size());
+//
+// v.clear();
+// for(auto i=0;i<20;i++){v.push_back(i);}
+// a.Link(&v[0],v.size());
+
  //}
 
  //{-------------------------------------------------------Diffusion----------------------------------------------------------
-// update_laplace(plate, nutrients);
-// diffusion(plate->diff_cnt, nutrients, gr);
-// gr.Update();
+// piramid_diffusion(plate);
+ update_laplace(plate, nutrients);
+ diffusion(plate->diff_cnt, nutrients, gr);
+ gr.Update();
  //}
 
  //{----------------------------------------------------Run FLTK window-------------------------------------------------------
-// gr.Run();// This goes at the end of main!
+ gr.Run();// This goes at the end of main!
  //}
 
  //{--------------------------------------------------------Cleanup-----------------------------------------------------------

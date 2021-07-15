@@ -10,7 +10,7 @@ void read_in (Plate*& plate, yeastDraw*& draw, std::vector<Nutrient>& nutrients,
     while (getline(fin,line,'\n'))
      {
         if(line == "VISUALISATION"){
-           draw = new yeastDraw(fin, line, plate, nutrients);
+           draw = new yeastDraw(fin, line, plate, nutrients, species);
         }
         else if(line == "PLATE"){
            plate = new Plate(fin, line);
