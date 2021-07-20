@@ -6,6 +6,10 @@ NUTRIENT
 name  initial_density  diffusion_constant_in_culture_media  diffusion_constant_in_air  diffusion_constant_near_cells
 food  200              0.1                                 0                           0.1
 
+NUTRIENT
+name  initial_density  diffusion_constant_in_culture_media  diffusion_constant_in_air  diffusion_constant_near_cells
+o2    300              0                                    0.1                        0.1
+
 CELLS
 name       initial_energy  food_uptake  food_uptake_efficiency  division_threshold  division_distance  death_threshold  metabolic_energy  growth_type  g0_factor  g0_threshold  branching_probability  division_direction_deviation  initial_cell_number  initial_cell_deviation  initial_population_center(x,y)
 species_1  2.5             0.4          1                       5                   0.7                0.5              0.1               0            0.05       1             0.01                   0                             5                    10                      15 15

@@ -30,27 +30,14 @@ int main()
     std::cout<<&i<<std::endl;
  }
 
+// auto a = cells.agent_list.begin(); //dummy example
+// a->energy = 0.1;
+// std::cout<<"Deleted agent: "<<&(*a)<<std::endl;
+
  cells.clear_positions();
-
- auto a = cells.agent_list.begin(); //dummy example
- a->energy = 0.1;
- std::cout<<"Deleted agent: "<<&(*a)<<std::endl;
-
  for(auto it=cells.agent_list.begin();it!=cells.agent_list.end();++it){ //go through all agents
     if(it->energy<(it->species->death_threshold)){ //see if agent should die
-        for(auto j:it->occupied_uniform_grids){ //go through every uniform grid it occupies
-            auto k = cells.agent_gridmap.equal_range(j); //find the grids in the agent_map
-            for(auto l=k.first;l!=k.second;++l){ //go through all occupied grids and delete agent to be killed
-                if(l->second == &(*it)){
-                    //delete from hashmap
-                    cells.agent_gridmap.erase(l);
-                    break;
-                }
-            }
-        }
-        //delete from list
-        it = cells.agent_list.erase(it);
-        --it;
+        cells.delete_agent(plate, it);
     }
 //    if(it==cells.agent_list.begin()){
 //        Cells::Agent yeast(plate, cells, &species[1], {15.6,29.2,species[1].init_pos_z});
@@ -58,8 +45,10 @@ int main()
 //        std::cout<<"Added agent: "<<&(*cells.agent_list.begin())<<std::endl;
 //    }
     else{cells.copy_positions(it);}
-    std::cout<<&it<<std::endl;
+
+    feed(plate, nutrients, it);
  }
+ draw->link_agent_position(cells.agent_positions);
 
  std::cout<<cells.agent_gridmap.size()<<std::endl;
  for(auto i:cells.agent_gridmap){
@@ -74,17 +63,6 @@ int main()
  for(auto& i:cells.agent_positions){
     std::cout<<i.first<<" "<<i.second[0].size()<<std::endl;
  }
-
- draw->link_agent_position(cells.agent_positions);
-
-// std::vector<double> v;
-// mglData a;
-// for(auto i=0;i<10;i++){v.push_back(i);}
-// a.Link(&v[0],v.size());
-//
-// v.clear();
-// for(auto i=0;i<20;i++){v.push_back(i);}
-// a.Link(&v[0],v.size());
 
  //}
 

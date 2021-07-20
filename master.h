@@ -181,7 +181,10 @@ public:
             s >> std::skipws >> diff_const_cell;
             getline(fin,line,'\n');
         }
+
+        laplace_mat.reserve(plate->plate_size*plate->plate_size);
         laplace_mat.resize(plate->plate_size,plate->plate_size);
+        density_space.reserve(plate->plate_size);
         density_space.resize(plate->plate_size);
         init_matrices(plate);
     }
@@ -258,8 +261,8 @@ public:
         float init_pos_x;
         float init_pos_y;
         float init_pos_z;
-        float food_uptake; //nutrient uptake
-        float food_uptake_eff; //nutrient uptake efficiency
+        float nutrient_uptake; //nutrient uptake
+        float uptake_eff; //nutrient uptake efficiency
 
         Species(){}
 
@@ -270,8 +273,8 @@ public:
                 std::stringstream s(line);
                 s >> std::skipws >> name;
                 s >> std::skipws >> init_E;
-                s >> std::skipws >> food_uptake;
-                s >> std::skipws >> food_uptake_eff;
+                s >> std::skipws >> nutrient_uptake;
+                s >> std::skipws >> uptake_eff;
                 s >> std::skipws >> div_threshold;
                 s >> std::skipws >> cell_radius;
                 sqrd_radius = pow(cell_radius,2);
@@ -299,6 +302,7 @@ public:
     public:
         Cells::Species *species; //pointer to species of the agent to acces it's attributes
         float energy; //energy
+        float nutrient_uptake;
         bool can_divide;
         std::array<float,3> pos; //position
         std::vector<int> occupied_uniform_grids; //GridCells which the agent occupies
@@ -314,9 +318,9 @@ public:
 
             //calculate occupied_uniform_grids
             occupied_uniform_grids = occupied_grid_cells({0,0,plate->agar_height},cells.conversion_factor,cells.gridcell_size,cells.gridmap_x,cells.gridmap_y);
-
             //calculate occupied_density_space
             occupied_density_space = occupied_grid_cells({0,0,0},1,1,plate->x,plate->y);
+            nutrient_uptake = static_cast<float>(species->nutrient_uptake/occupied_density_space.size());
         }
 
         //shallow copy constructor
@@ -324,6 +328,7 @@ public:
             energy = old_agent.energy;
             can_divide = old_agent.can_divide;
             pos = old_agent.pos;
+            nutrient_uptake = old_agent.nutrient_uptake;
             occupied_uniform_grids = old_agent.occupied_uniform_grids;
             occupied_density_space = old_agent.occupied_density_space;
 //            species = new Cells::Species;
@@ -336,6 +341,7 @@ public:
             energy = old_agent.energy;
             can_divide = old_agent.can_divide;
             pos = old_agent.pos;
+            nutrient_uptake = old_agent.nutrient_uptake;
             occupied_uniform_grids = old_agent.occupied_uniform_grids;
             occupied_density_space = old_agent.occupied_density_space;
             species = old_agent.species;
@@ -348,6 +354,7 @@ public:
 //            energy = old_agent.energy;
 //            can_divide = old_agent.can_divide;
 //            pos = old_agent.pos;
+//            nutrient_uptake = old_agent.nutrient_uptake;
 //            occupied_uniform_grids = old_agent.occupied_uniform_grids;
 //            occupied_density_space = old_agent.occupied_density_space;
 //            species = old_agent.species;
@@ -466,10 +473,9 @@ public:
         }
     }
 
-    void copy_positions(std::list<Cells::Agent>::iterator agent){ //BUG
+    void copy_positions(std::list<Cells::Agent>::iterator agent){
         for(size_t i=0;i<agent->pos.size();++i){
             agent_positions[agent->species][i].push_back(agent->pos[i]);
-            //std::cout<<"species in copy: "<<agent->species<<std::endl;
         }
     }
 
@@ -496,36 +502,42 @@ public:
         gridmap_size = gridmap_x*gridmap_y*gridmap_z;
     }
 
-    void add_agent(Cells::Agent &yeast){
-        agent_list.push_front(yeast);
-        for(auto i:yeast.occupied_uniform_grids){
+    void add_agent(Plate*& plate, Cells::Agent &yeast){
+        agent_list.push_front(yeast); //list
+        for(auto &i:yeast.occupied_uniform_grids){ //hashmap
             agent_gridmap.emplace(i,&(agent_list.front()));
+        }
+        for(auto &i:yeast.occupied_density_space){ //occupied cells in density matrices
+            plate->occupancy_space.set(i);
         }
     }
 
-//    void delete_agent(Cells::Agent &yeast){
-//        for(auto grid_cell:yeast.occupied_uniform_grids){ //go through every uniform grid it occupies
-//            auto entries = cells.agent_gridmap.equal_range(grid_cell); //find the grids in the agent_map
-//            for(auto entry=entries.first;entry!=entries.second;++entry){ //go through all occupied grids and delete agent to be killed
-//                if(entry->second == &yeast){
-//                    //delete from hashmap
-//                    agent_gridmap.erase(entry);
-//                    break;
-//                }
-//            }
-//        }
-//        //delete from list
-//        it = cells.agent_list.erase(it);
-//        --it;
-//    }
+    void delete_agent(Plate*& plate, std::list<Cells::Agent>::iterator &agent){
+        for(auto j:agent->occupied_uniform_grids){ //go through every uniform grid it occupies
+            auto k = agent_gridmap.equal_range(j); //find the grids in the agent_map
+            for(auto l=k.first;l!=k.second;++l){ //go through all occupied grids and delete agent to be killed
+                if(l->second == &(*agent)){
+                    //delete from hashmap
+                    agent_gridmap.erase(l);
+                    break;
+                }
+            }
+        }
+        for(auto &i:agent->occupied_density_space){ //occupied cells in density matrices
+            plate->occupancy_space.reset(i);
+        }
+        //delete from list
+        agent = agent_list.erase(agent);
+        --agent;
+    }
 
     inline void init_positions(Plate*& plate, Cells::Species *s){
         std::vector<std::array<float,2>> positions;
-        float x = s->init_pos_x + s->init_cell_dev * (float) rand()/RAND_MAX;
-        float y = s->init_pos_y + s->init_cell_dev * (float) rand()/RAND_MAX;
+        float x = s->init_pos_x /*+ s->init_cell_dev * (float) rand()/RAND_MAX*/;
+        float y = s->init_pos_y /*+ s->init_cell_dev * (float) rand()/RAND_MAX*/;
         positions.push_back({x,y});
         Cells::Agent yeast(plate, *this, s, {x,y,s->init_pos_z});
-        add_agent(yeast);
+        add_agent(plate, yeast);
         if(s->init_cell_num==1){return;}
 
         int counter = 1;
@@ -545,7 +557,7 @@ public:
             if(min_dist >= d){
                 positions.push_back({x,y});
                 Cells::Agent yeast(plate, *this, s, {x,y,s->init_pos_z});
-                add_agent(yeast);
+                add_agent(plate, yeast);
                 counter += 1;
             }
         }
