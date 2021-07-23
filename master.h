@@ -245,14 +245,19 @@ public:
     public:
         ///initial properties of cells
         std::string name;
-        float init_E; //initial energy
-        float div_threshold; //division threshold (in terms of energy)
+//        float init_E; //initial energy
+        std::vector<float> init_E; //initial energy
+//        float div_threshold; //division threshold (in terms of energy)
+        std::vector<float> div_threshold; //division threshold (in terms of energy)
         float cell_radius; //size of the spherical agent
         float sqrd_radius; //squared cell radius for efficient distance comparions
-        float death_threshold; //death threshold (in terms of energy)
+//        float death_threshold; //death threshold (in terms of energy)
+        std::vector<float> death_threshold; //death threshold (in terms of energy)
         float g0_factor; //penalty in g0 state (constant multiplier)
-        float g0_threshold; //g0 threshold (in terms of energy)
-        float metab_E; //energy usage by metabolism
+//        float g0_threshold; //g0 threshold (in terms of energy)
+        std::vector<float> g0_threshold; //g0 threshold (in terms of energy)
+//        float metab_E; //energy usage by
+        std::vector<float> metab_E; //energy usage by metabolism
         float growth_type; //type of colony
         float branch_prob; //branching probability
         float div_dir_dev; //division direction deviation
@@ -261,28 +266,59 @@ public:
         float init_pos_x;
         float init_pos_y;
         float init_pos_z;
-        float nutrient_uptake; //nutrient uptake
-        float uptake_eff; //nutrient uptake efficiency
+//        float nutrient_uptake; //nutrient uptake
+        std::vector<float> nutrient_uptake; //nutrient uptake
+//        float uptake_eff; //nutrient uptake efficiency
+        std::vector<float> uptake_eff; //nutrient uptake efficiency
 
         Species(){}
 
-        Species(std::ifstream& fin, std::string& line, Plate*& plate){
+        Species(std::ifstream& fin, std::string& line, Plate*& plate, size_t nutrient_size){
             fin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             getline(fin,line,'\n');
             while(!line.empty()){
+                float value;
                 std::stringstream s(line);
                 s >> std::skipws >> name;
-                s >> std::skipws >> init_E;
-                s >> std::skipws >> nutrient_uptake;
-                s >> std::skipws >> uptake_eff;
-                s >> std::skipws >> div_threshold;
+                for(size_t i=0;i<nutrient_size;++i){
+                    s >> std::skipws >> value;
+                    init_E.push_back(value);
+                }
+//                s >> std::skipws >> init_E;
+                for(size_t i=0;i<nutrient_size;++i){
+                    s >> std::skipws >> value;
+                    nutrient_uptake.push_back(value);
+                }
+//                s >> std::skipws >> nutrient_uptake;
+                for(size_t i=0;i<nutrient_size;++i){
+                    s >> std::skipws >> value;
+                    uptake_eff.push_back(value);
+                }
+//                s >> std::skipws >> uptake_eff;
+                for(size_t i=0;i<nutrient_size;++i){
+                    s >> std::skipws >> value;
+                    div_threshold.push_back(value);
+                }
+//                s >> std::skipws >> div_threshold;
                 s >> std::skipws >> cell_radius;
                 sqrd_radius = pow(cell_radius,2);
-                s >> std::skipws >> death_threshold;
-                s >> std::skipws >> metab_E;
+                for(size_t i=0;i<nutrient_size;++i){
+                    s >> std::skipws >> value;
+                    death_threshold.push_back(value);
+                }
+//                s >> std::skipws >> death_threshold;
+                for(size_t i=0;i<nutrient_size;++i){
+                    s >> std::skipws >> value;
+                    metab_E.push_back(value);
+                }
+//                s >> std::skipws >> metab_E;
                 s >> std::skipws >> growth_type;
                 s >> std::skipws >> g0_factor;
-                s >> std::skipws >> g0_threshold;
+                for(size_t i=0;i<nutrient_size;++i){
+                    s >> std::skipws >> value;
+                    g0_threshold.push_back(value);
+                }
+//                s >> std::skipws >> g0_threshold;
                 s >> std::skipws >> branch_prob;
                 s >> std::skipws >> div_dir_dev;
                 div_dir_dev /= M_PI;
@@ -301,9 +337,11 @@ public:
     class Agent{
     public:
         Cells::Species *species; //pointer to species of the agent to acces it's attributes
-        float energy; //energy
-        float nutrient_uptake;
-        bool can_divide;
+//        float energy; //energy
+        std::vector<float> energy; //energy
+//        float nutrient_uptake;
+        std::vector<float> nutrient_uptake;
+        bool state;
         std::array<float,3> pos; //position
         std::vector<int> occupied_uniform_grids; //GridCells which the agent occupies
         std::vector<int> occupied_density_space; // density space matrix cells which the agent occupies
@@ -313,20 +351,21 @@ public:
         Agent(Plate *&plate, Cells &cells, Cells::Species *species, std::array<float,3> pos){
             this->species = species;
             this->energy = species->init_E;
-            this->can_divide = (energy > species->div_threshold);
+            decide_state();
             this->pos = pos;
 
-            //calculate occupied_uniform_grids
             occupied_uniform_grids = occupied_grid_cells({0,0,plate->agar_height},cells.conversion_factor,cells.gridcell_size,cells.gridmap_x,cells.gridmap_y);
-            //calculate occupied_density_space
             occupied_density_space = occupied_grid_cells({0,0,0},1,1,plate->x,plate->y);
-            nutrient_uptake = static_cast<float>(species->nutrient_uptake/occupied_density_space.size());
+            for(auto &n:species->nutrient_uptake){
+                nutrient_uptake.push_back(static_cast<float>(n/occupied_density_space.size()));
+            }
+//            nutrient_uptake = static_cast<float>(species->nutrient_uptake/occupied_density_space.size());
         }
 
         //shallow copy constructor
         Agent(const Cells::Agent &old_agent){
             energy = old_agent.energy;
-            can_divide = old_agent.can_divide;
+            state = old_agent.state;
             pos = old_agent.pos;
             nutrient_uptake = old_agent.nutrient_uptake;
             occupied_uniform_grids = old_agent.occupied_uniform_grids;
@@ -339,7 +378,7 @@ public:
         //move constructor
         Agent(Cells::Agent &&old_agent){
             energy = old_agent.energy;
-            can_divide = old_agent.can_divide;
+            state = old_agent.state;
             pos = old_agent.pos;
             nutrient_uptake = old_agent.nutrient_uptake;
             occupied_uniform_grids = old_agent.occupied_uniform_grids;
@@ -352,7 +391,7 @@ public:
 //        Cells::Agent& operator=(const Cells::Agent &old_agent){
 //            std::cout<<"shit's been called yo"<<std::endl;
 //            energy = old_agent.energy;
-//            can_divide = old_agent.can_divide;
+//            state = old_agent.state;
 //            pos = old_agent.pos;
 //            nutrient_uptake = old_agent.nutrient_uptake;
 //            occupied_uniform_grids = old_agent.occupied_uniform_grids;
@@ -363,6 +402,10 @@ public:
 
         //~Agent(){}
         ~Agent(){species = nullptr;}
+
+        void decide_state(){ //decide whether an agent should be active or in G0 state
+            state = (energy > species->g0_threshold);
+        }
 
         std::vector<int> occupied_grid_cells(std::array<int,3> e, float c, int d, int length, int width){
 

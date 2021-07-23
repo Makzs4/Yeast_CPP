@@ -30,14 +30,18 @@ int main()
     std::cout<<&i<<std::endl;
  }
 
-// auto a = cells.agent_list.begin(); //dummy example
-// a->energy = 0.1;
-// std::cout<<"Deleted agent: "<<&(*a)<<std::endl;
+ auto a = cells.agent_list.begin(); //dummy example
+ a->energy[0] = 0.1;
+ std::cout<<"Deleted agent: "<<&(*a)<<std::endl;
 
  cells.clear_positions();
  for(auto it=cells.agent_list.begin();it!=cells.agent_list.end();++it){ //go through all agents
+    feed(plate, nutrients, it);
+
+    it->decide_state();
+
     if(it->energy<(it->species->death_threshold)){ //see if agent should die
-        cells.delete_agent(plate, it);
+        cell_death(plate, nutrients, cells, it);
     }
 //    if(it==cells.agent_list.begin()){
 //        Cells::Agent yeast(plate, cells, &species[1], {15.6,29.2,species[1].init_pos_z});
@@ -45,8 +49,6 @@ int main()
 //        std::cout<<"Added agent: "<<&(*cells.agent_list.begin())<<std::endl;
 //    }
     else{cells.copy_positions(it);}
-
-    feed(plate, nutrients, it);
  }
  draw->link_agent_position(cells.agent_positions);
 

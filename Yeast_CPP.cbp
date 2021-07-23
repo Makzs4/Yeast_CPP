@@ -36,6 +36,7 @@
 		<Unit filename="Test_Hashtable.cpp" />
 		<Unit filename="Test_MathGL_handling.cpp" />
 		<Unit filename="Test_Valarray_handling.cpp" />
+		<Unit filename="death.cpp" />
 		<Unit filename="diffusion.cpp" />
 		<Unit filename="diffusion_illustrations.cpp" />
 		<Unit filename="feeding.cpp" />

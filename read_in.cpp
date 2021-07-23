@@ -19,7 +19,7 @@ void read_in (Plate*& plate, yeastDraw*& draw, std::vector<Nutrient>& nutrients,
            nutrients.push_back(Nutrient(fin, line, plate));
         }
         else if(line == "CELLS"){
-           species.push_back(Cells::Species(fin, line, plate));
+           species.push_back(Cells::Species(fin, line, plate, nutrients.size()));
         }
      }
     }
