@@ -66,10 +66,19 @@ public:
 
 //{-------------------------------------------------Functions-------------------------------------------------
 inline bool is_on_plate(int& x, int& y, int& z, int& max_x, int& max_y, int& max_z, std::array<int,3> (&i)){
- return((x+i[0]<=max_x-1) && (x+i[0]>=0) && (y+i[1]<=max_y-1) && (y+i[1]>=0) && (z+i[2]<=max_z-1) && (z+i[2]>=0));
+    return((x+i[0]<=max_x-1) && (x+i[0]>=0) && (y+i[1]<=max_y-1) && (y+i[1]>=0) && (z+i[2]<=max_z-1) && (z+i[2]>=0));
 }
 //inline bool is_on_plate(int& i, int& max_i, int& j){
 // return((i+j>0) && (i+j<=max_i));
+
+inline float inverse_square_root(float n){ //QUAKE
+    float y = n;
+    std::uint32_t i;
+    std::memcpy(&i, &y, sizeof(float));
+    i  = 0x5f3759df - ( i >> 1 );
+    std::memcpy(&y, &i, sizeof(float));
+    return y * ( 1.5F - ( (n * 0.5F )* y * y ) );
+}
 
 //}
 
@@ -250,7 +259,7 @@ public:
 //        float div_threshold; //division threshold (in terms of energy)
         std::vector<float> div_threshold; //division threshold (in terms of energy)
         float cell_radius; //size of the spherical agent
-        float sqrd_radius; //squared cell radius for efficient distance comparions
+        float sqrd_radius; //squared cell radius for efficient distance comparisons
 //        float death_threshold; //death threshold (in terms of energy)
         std::vector<float> death_threshold; //death threshold (in terms of energy)
         float g0_factor; //penalty in g0 state (constant multiplier)
@@ -341,10 +350,11 @@ public:
         std::vector<float> energy; //energy
 //        float nutrient_uptake;
         std::vector<float> nutrient_uptake;
-        bool state;
         std::array<float,3> pos; //position
         std::vector<int> occupied_uniform_grids; //GridCells which the agent occupies
         std::vector<int> occupied_density_space; // density space matrix cells which the agent occupies
+        bool state;
+        bool divide;
 
         Agent(){}
 
@@ -352,6 +362,7 @@ public:
             this->species = species;
             this->energy = species->init_E;
             decide_state();
+            can_divide(cells);
             this->pos = pos;
 
             occupied_uniform_grids = occupied_grid_cells({0,0,plate->agar_height},cells.conversion_factor,cells.gridcell_size,cells.gridmap_x,cells.gridmap_y);
@@ -366,6 +377,7 @@ public:
         Agent(const Cells::Agent &old_agent){
             energy = old_agent.energy;
             state = old_agent.state;
+            divide = old_agent.divide;
             pos = old_agent.pos;
             nutrient_uptake = old_agent.nutrient_uptake;
             occupied_uniform_grids = old_agent.occupied_uniform_grids;
@@ -379,6 +391,7 @@ public:
         Agent(Cells::Agent &&old_agent){
             energy = old_agent.energy;
             state = old_agent.state;
+            divide = old_agent.divide;
             pos = old_agent.pos;
             nutrient_uptake = old_agent.nutrient_uptake;
             occupied_uniform_grids = old_agent.occupied_uniform_grids;
@@ -391,6 +404,7 @@ public:
 //        Cells::Agent& operator=(const Cells::Agent &old_agent){
 //            std::cout<<"shit's been called yo"<<std::endl;
 //            energy = old_agent.energy;
+//            divide = old_agent.divide;
 //            state = old_agent.state;
 //            pos = old_agent.pos;
 //            nutrient_uptake = old_agent.nutrient_uptake;
@@ -405,6 +419,21 @@ public:
 
         void decide_state(){ //decide whether an agent should be active or in G0 state
             state = (energy > species->g0_threshold);
+        }
+
+        void can_divide(Cells &cells){
+            //check energy level first
+            divide = (energy > species->div_threshold);
+            if(!divide){return;}
+
+            //check 'density' of grid cells occupied by agent
+            //if all of them are 'full', then divide is 0, else 1
+            divide = false;
+            for(auto &i:occupied_uniform_grids){
+                auto range = cells.agent_gridmap.equal_range(i);
+                auto density = std::distance(range.first,range.second);
+                divide = divide||(density < 33);
+            }
         }
 
         std::vector<int> occupied_grid_cells(std::array<int,3> e, float c, int d, int length, int width){
@@ -535,7 +564,7 @@ public:
                                   [](const Cells::Species& a, const Cells::Species& b)
                                   {return a.cell_radius < b.cell_radius;});
 
-        gridcell_size = 3*ceil(2*n->cell_radius);
+        gridcell_size = ceil(3*2*n->cell_radius);
     }
 
     void num_of_gridcells(Plate*& plate){
@@ -696,6 +725,8 @@ public:
         z = p->z;
     }
 
+    ~yeastDraw(){}
+
     void setup_nutrient_container(Plate*& p, std::vector<Nutrient>& _nutrients){
         nutrients.reserve(_nutrients.size()); //Hell yeah!
         for(auto& n:_nutrients){
@@ -717,8 +748,6 @@ public:
             }
         }
     }
-
-    ~yeastDraw(){}
 
     int Draw(mglGraph* gr){
      Agar(gr);

@@ -39,6 +39,7 @@
 		<Unit filename="death.cpp" />
 		<Unit filename="diffusion.cpp" />
 		<Unit filename="diffusion_illustrations.cpp" />
+		<Unit filename="division.cpp" />
 		<Unit filename="feeding.cpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="main.h" />

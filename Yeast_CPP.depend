@@ -48,7 +48,7 @@
 1616691384 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\eigen_handling_test.cpp
 	"master.h"
 
-1626875050 d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\master.h
+1628496633 d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\master.h
 	<iostream>
 	<fstream>
 	<sstream>
@@ -69,11 +69,11 @@
 	<mgl2/fltk.h>
 	<valarray>
 
-1626885912 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\main.cpp
+1628491169 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\main.cpp
 	"master.h"
 	"main.h"
 
-1626869851 d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\main.h
+1628346433 d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\main.h
 
 1617885977 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\mathgl_handling_test.cpp
 	"master.h"
@@ -102,9 +102,12 @@
 1625517130 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\diffusion_illustrations.cpp
 	"master.h"
 
-1626862550 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\feeding.cpp
+1627395217 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\feeding.cpp
 	"master.h"
 
-1626871213 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\death.cpp
+1627923487 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\death.cpp
+	"master.h"
+
+1628496500 source:d:\bence\tanulm햚yok\ppke_itk\yeast_project\yeast_cpp\division.cpp
 	"master.h"
 

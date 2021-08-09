@@ -19,7 +19,6 @@ int main()
  //}
 
  //{--------------------------------------------------------Testing-----------------------------------------------------------
- // Cells::Agent agent(plate, cells, &species[1], {15.6,29.2,9.3});
  std::cout<<cells.agent_gridmap.size()<<std::endl;
  for(auto i:cells.agent_gridmap){
     std::cout<<i.first<<", "<<i.second<<std::endl;
@@ -33,21 +32,21 @@ int main()
  auto a = cells.agent_list.begin(); //dummy example
  a->energy[0] = 0.1;
  std::cout<<"Deleted agent: "<<&(*a)<<std::endl;
+ auto b = std::next(cells.agent_list.begin());
+ b->energy[0] = 10;
 
  cells.clear_positions();
  for(auto it=cells.agent_list.begin();it!=cells.agent_list.end();++it){ //go through all agents
     feed(plate, nutrients, it);
 
     it->decide_state();
+    it->can_divide(cells);
+
+    if(it->state && it->divide){cell_division(plate, cells, it, 100, 10);}
 
     if(it->energy<(it->species->death_threshold)){ //see if agent should die
         cell_death(plate, nutrients, cells, it);
     }
-//    if(it==cells.agent_list.begin()){
-//        Cells::Agent yeast(plate, cells, &species[1], {15.6,29.2,species[1].init_pos_z});
-//        cells.add_agent(yeast);
-//        std::cout<<"Added agent: "<<&(*cells.agent_list.begin())<<std::endl;
-//    }
     else{cells.copy_positions(it);}
  }
  draw->link_agent_position(cells.agent_positions);
@@ -60,10 +59,6 @@ int main()
  std::cout<<cells.agent_list.size()<<std::endl;
  for(auto& i:cells.agent_list){
     std::cout<<&i<<std::endl;
- }
-
- for(auto& i:cells.agent_positions){
-    std::cout<<i.first<<" "<<i.second[0].size()<<std::endl;
  }
 
  //}

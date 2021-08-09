@@ -6,6 +6,7 @@ void diffusion(int& diff_cnt, std::vector<Nutrient>& nutrients, mglFLTK& gr);
 void update_laplace(Plate*& plate, std::vector<Nutrient>& nutrients);
 void feed(Plate*& plate, std::vector<Nutrient>& nutrients, std::list<Cells::Agent>::iterator &agent);
 void cell_death(Plate*& plate, std::vector<Nutrient>& nutrients, Cells &cells,std::list<Cells::Agent>::iterator &agent);
+void cell_division(Plate*& plate, Cells &cells, std::list<Cells::Agent>::iterator &agent, int points, int tries);
 
 //might delete later
 void piramid_diffusion(Plate*& plate);
