@@ -18,6 +18,7 @@
 #include <memory>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 #include <Eigen/SparseCore>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/functional/hash.hpp>
@@ -426,14 +427,14 @@ public:
             divide = (energy > species->div_threshold);
             if(!divide){return;}
 
-            //check 'density' of grid cells occupied by agent
-            //if all of them are 'full', then divide is 0, else 1
-            divide = false;
-            for(auto &i:occupied_uniform_grids){
-                auto range = cells.agent_gridmap.equal_range(i);
-                auto density = std::distance(range.first,range.second);
-                divide = divide||(density < 33);
-            }
+//            //check 'density' of grid cells occupied by agent
+//            //if all of them are 'full', then divide is 0, else 1
+//            divide = false;
+//            for(auto &i:occupied_uniform_grids){
+//                auto range = cells.agent_gridmap.equal_range(i);
+//                auto density = std::distance(range.first,range.second);
+//                divide = divide||(density < 50);
+//            }
         }
 
         std::vector<int> occupied_grid_cells(std::array<int,3> e, float c, int d, int length, int width){
