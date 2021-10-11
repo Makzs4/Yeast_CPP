@@ -255,6 +255,7 @@ public:
     public:
         ///initial properties of cells
         std::string name;
+        std::string color;
 //        float init_E; //initial energy
         std::vector<float> init_E; //initial energy
 //        float div_threshold; //division threshold (in terms of energy)
@@ -290,6 +291,7 @@ public:
                 float value;
                 std::stringstream s(line);
                 s >> std::skipws >> name;
+                s >> std::skipws >> color;
                 for(size_t i=0;i<nutrient_size;++i){
                     s >> std::skipws >> value;
                     init_E.push_back(value);
@@ -520,7 +522,7 @@ public:
 
     std::list<Cells::Agent> agent_list;
     std::unordered_multimap<int, Cells::Agent*> agent_gridmap;
-    std::map<Cells::Species*,std::array<std::vector<double>,3>> agent_positions; //will be linked to mglData objects to plot agents
+    std::map<Cells::Species*,std::map<bool,std::array<std::vector<double>,3>>> agent_positions; //will be linked to mglData objects to plot agents
     int gridmap_size;
     int gridmap_x, gridmap_y, gridmap_z;
     int gridcell_size; //size of a grid cell x, y and z-wise
@@ -542,20 +544,24 @@ public:
     void setup_position_container(std::vector<Cells::Species>& species){
         for(auto &i:species){
             std::array<std::vector<double>,3> positions;
-            agent_positions[&i] = positions;
+            agent_positions[&i][0] = positions;
+            agent_positions[&i][1] = positions;
         }
     }
 
     void copy_positions(std::list<Cells::Agent>::iterator agent){
         for(size_t i=0;i<agent->pos.size();++i){
-            agent_positions[agent->species][i].push_back(agent->pos[i]);
+            agent_positions[agent->species][agent->state][i].push_back(agent->pos[i]);
         }
     }
 
     void clear_positions(){
-        for(auto &position_array:agent_positions){
-            for(auto &position_vector:position_array.second){
-                position_vector.clear();
+        for(auto &species_map:agent_positions){
+            for(auto &positions_map:species_map.second){
+                for(auto &position_vector:positions_map.second){
+                    position_vector.clear();
+
+                }
             }
         }
     }
@@ -702,8 +708,9 @@ public:
     int x;
     int y;
     int z;
+    std::map<std::string,std::pair<const char*, const char*>> colormap;
     std::vector<mglEigenVec> nutrients;
-    std::map<Cells::Species*,std::array<mglData,3>> agent_positions; //agent_positions in Cells will be linked to these
+    std::map<Cells::Species*,std::map<bool,std::array<mglData,3>>> agent_positions; //agent_positions in Cells will be linked to these
 
     yeastDraw(){}
 
@@ -718,6 +725,7 @@ public:
             getline(fin,line,'\n');
         }
 
+        setup_colormap();
         setup_nutrient_container(p, _nutrients);
         setup_position_container(species);
 
@@ -727,6 +735,16 @@ public:
     }
 
     ~yeastDraw(){}
+
+    void setup_colormap(){
+        colormap.emplace("red",std::make_pair("{xA93226}","{xE74C3C}"));
+        colormap.emplace("orange",std::make_pair("{xE67E22}","{xF5B041}"));
+        colormap.emplace("yellow",std::make_pair("{xF1C40F}","{xF7DC6F}"));
+        colormap.emplace("green",std::make_pair("{x1E8449}","{x2ECC71}"));
+        colormap.emplace("turquoise",std::make_pair("{x16A085}","{x76D7C4}"));
+        colormap.emplace("blue",std::make_pair("{x2980B9}","{x5DADE2}"));
+        colormap.emplace("purple",std::make_pair("{x7D3C98}","{xAF7AC5}"));
+    }
 
     void setup_nutrient_container(Plate*& p, std::vector<Nutrient>& _nutrients){
         nutrients.reserve(_nutrients.size()); //Hell yeah!
@@ -738,14 +756,17 @@ public:
     void setup_position_container(std::vector<Cells::Species>& species){
         for(auto &i:species){
             std::array<mglData,3> positions;
-            agent_positions[&i] = positions;
+            agent_positions[&i][0] = positions;
+            agent_positions[&i][1] = positions;
         }
     }
 
-    void link_agent_position(std::map<Cells::Species*,std::array<std::vector<double>,3>>& _agent_positions){
-        for(auto &positions:_agent_positions){
-            for(size_t i=0;i<positions.second.size();++i){
-                agent_positions[positions.first][i].Link(&(positions.second[i])[0],positions.second[i].size());
+    void link_agent_position(std::map<Cells::Species*,std::map<bool,std::array<std::vector<double>,3>>>& _agent_positions){
+        for(auto &species_map:_agent_positions){
+            for(auto &positions_map:species_map.second){
+                for(size_t i=0;i<positions_map.second.size();++i){
+                    agent_positions[species_map.first][positions_map.first][i].Link(&(positions_map.second[i])[0],positions_map.second[i].size());
+                }
             }
         }
     }
@@ -769,8 +790,11 @@ public:
     }
 
     void YeastCells(mglGraph* gr){
-        for(auto &positions:agent_positions){
-            gr->Dots(positions.second[0],positions.second[1],positions.second[2],"y","size 10");
+        for(auto &species_map:agent_positions){
+            //active agents
+            gr->Dots(species_map.second[1][0],species_map.second[1][1],species_map.second[1][2],colormap[species_map.first->color].first,"size 10");
+            //g0 agents
+            gr->Dots(species_map.second[0][0],species_map.second[0][1],species_map.second[0][2],colormap[species_map.first->color].second,"size 10");
         }
     }
 };

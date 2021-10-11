@@ -1,7 +1,6 @@
 #include "master.h"
 
 //assume only a dividing agent gets here: check goes in main
-
 void cell_division(Plate*& plate, Cells &cells, std::list<Cells::Agent>::iterator &agent, std::mt19937 &gen, std::normal_distribution<> &distr, int tries){
 
     //std::cout<<"Permitted sqrd distance: "<<agent->species->sqrd_radius<<std::endl;
@@ -16,10 +15,17 @@ void cell_division(Plate*& plate, Cells &cells, std::list<Cells::Agent>::iterato
         y = y*norm*2*agent->species->cell_radius + agent->pos[1];
         z = z*norm*2*agent->species->cell_radius + agent->pos[2];
 
-        //reject the ones that are outside of permitted area
-        if((x<=plate->x-agent->species->cell_radius) && (x>=0) &&
-           (y<=plate->y-agent->species->cell_radius) && (y>=0) &&
-           (z<=plate->z-agent->species->cell_radius) && (z>=plate->agar_height+agent->species->cell_radius)){
+        //reject the ones that are outside of permitted area - classic rejection method
+        if((x>=plate->x-agent->species->cell_radius) || (x<=0) ||
+           (y>=plate->y-agent->species->cell_radius) || (y<=0) ||
+           (z>=plate->z-agent->species->cell_radius) || (z<=plate->agar_height + agent->species->cell_radius)){
+              goto loop_end;
+        }
+
+//        if((x<=plate->x-agent->species->cell_radius) && (x>=0) &&
+//           (y<=plate->y-agent->species->cell_radius) && (y>=0) &&
+//           (z<=plate->z-agent->species->cell_radius) && (z>=plate->agar_height + agent->species->cell_radius))
+           {
 
                //test each point, until a good one is found
                //see if occupied uniform grids here are "full"
