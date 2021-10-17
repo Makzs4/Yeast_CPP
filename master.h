@@ -162,6 +162,14 @@ public:
     }
 
     ~Plate(){}
+
+    void set_plate_dimensions(int gridcell_size){
+        //update plate sizes to ensure the grids will fit
+        x = ceil((float)x/(float)gridcell_size)*gridcell_size;
+        y = ceil((float)y/(float)gridcell_size)*gridcell_size;
+        z = ceil((float)z/(float)gridcell_size)*gridcell_size;
+        plate_size = x*y*z;
+    }
 };
 
 class Nutrient{
@@ -196,12 +204,19 @@ public:
         laplace_mat.resize(plate->plate_size,plate->plate_size);
         density_space.reserve(plate->plate_size);
         density_space.resize(plate->plate_size);
-        init_matrices(plate);
     }
 
     ~Nutrient(){}
 
-    void init_matrices(Plate* plate){
+    void set_matrices(Plate*& plate){
+        laplace_mat.reserve(plate->plate_size*plate->plate_size);
+        laplace_mat.resize(plate->plate_size,plate->plate_size);
+        density_space.reserve(plate->plate_size);
+        density_space.resize(plate->plate_size);
+        init_matrices(plate);
+    }
+
+    void init_matrices(Plate*& plate){
 //        std::vector<Eigen::Triplet<float>> laplace_triplet_list;
         laplace_triplet_list.reserve(7*(plate->plate_size));
         density_space.reserve(plate->x*plate->y*((diff_const_agar>0)*plate->agar_height+(diff_const_air>0)*(plate->z-plate->agar_height))); //big brain move
@@ -429,14 +444,14 @@ public:
             divide = (energy > species->div_threshold);
             if(!divide){return;}
 
-//            //check 'density' of grid cells occupied by agent
-//            //if all of them are 'full', then divide is 0, else 1
-//            divide = false;
-//            for(auto &i:occupied_uniform_grids){
-//                auto range = cells.agent_gridmap.equal_range(i);
-//                auto density = std::distance(range.first,range.second);
-//                divide = divide||(density < 50);
-//            }
+            //check 'density' of grid cells occupied by agent
+            //if all of them are 'full', then divide is 0, else 1
+            divide = false;
+            for(auto &i:occupied_uniform_grids){
+                auto range = cells.agent_gridmap.equal_range(i);
+                auto density = std::distance(range.first,range.second);
+                divide = divide||(density < 24);
+            }
         }
 
         std::vector<int> occupied_grid_cells(std::array<int,3> e, float c, int d, int length, int width){
@@ -475,7 +490,6 @@ public:
 //                        std::cout<<"find_x_max started"<<std::endl;
 //                        find_x_max(x_min, y, z, x_max, d);
 //                    }
-
                     //save (each grid from x_min to x_max
                     for(auto x=x_min;x<=x_max;++x){
                         grids.push_back(x+length*(y+width*z));
@@ -532,7 +546,7 @@ public:
     Cells(){}
 
     Cells(Plate*& plate, std::vector<Cells::Species>& species){
-        size_of_gridcell(species);//determine gridcell_size based on cell radii
+        size_of_gridcell(plate, species);//determine gridcell_size based on cell radii
         conversion_factor = 1/(float)gridcell_size;
         num_of_gridcells(plate); //determine gridmap_size and dimensions based on plate and size of one grid cell
         agent_gridmap.reserve(gridmap_size);//reserve space for agent_gridmap
@@ -566,12 +580,13 @@ public:
         }
     }
 
-    void size_of_gridcell(std::vector<Cells::Species>& species){
+    void size_of_gridcell(Plate*& plate, std::vector<Cells::Species>& species){
+        //calculate gridcell size based on largest agent in the model
         auto n = std::max_element(species.begin(), species.end(),
                                   [](const Cells::Species& a, const Cells::Species& b)
                                   {return a.cell_radius < b.cell_radius;});
 
-        gridcell_size = ceil(3*2*n->cell_radius);
+        gridcell_size = ceil(2*2*n->cell_radius);
     }
 
     void num_of_gridcells(Plate*& plate){
@@ -702,7 +717,7 @@ protected:
 
 class yeastDraw : public mglDraw{
 public:
-    int is_draw;
+    bool is_draw;
     int steps;
     int resolution;
     int x;
@@ -794,7 +809,7 @@ public:
             //active agents
             gr->Dots(species_map.second[1][0],species_map.second[1][1],species_map.second[1][2],colormap[species_map.first->color].first,"size 10");
             //g0 agents
-            gr->Dots(species_map.second[0][0],species_map.second[0][1],species_map.second[0][2],colormap[species_map.first->color].second,"size 10");
+            gr->Dots(species_map.second[0][0],species_map.second[0][1],species_map.second[0][2],/*colormap[species_map.first->color].second*/"{x000000}","size 10");
         }
     }
 };

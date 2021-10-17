@@ -32,10 +32,15 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-O3" />
 			<Add option="-Wall" />
 			<Add option="-std=gnu++17" />
+			<Add option="-pg" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Linker>
+			<Add option="-pg -lgmon" />
+		</Linker>
 		<Unit filename="Test_Eigen_handling.cpp" />
 		<Unit filename="Test_Hashtable.cpp" />
 		<Unit filename="Test_MathGL_handling.cpp" />

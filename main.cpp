@@ -3,6 +3,8 @@
 
 int main()
 {
+ time_t start = time(0);
+
  srand(time(NULL));
  std::mt19937 gen(time(NULL));
 // std::random_device rd{};
@@ -11,6 +13,7 @@ int main()
  //{--------------------------------------------------Create initial objects--------------------------------------------------
  Plate* plate = nullptr;
  yeastDraw* draw = nullptr;
+ mglFLTK* gr = nullptr;
  std::vector<Nutrient> nutrients;
  std::vector<Cells::Species> species;
  //}
@@ -18,8 +21,10 @@ int main()
  //{--------------------------------------------------Read in and initialize--------------------------------------------------
  read_in(plate, draw, nutrients, species, "3D_parameters.txt");
  Cells cells(plate, species);
+ plate->set_plate_dimensions(cells.gridcell_size);
+ for(auto &nutrient:nutrients){nutrient.set_matrices(plate);}
  cells.init_agents(plate, species);
- mglFLTK gr(draw, "MathGL run test");
+ if(draw->is_draw){gr = new mglFLTK(draw, "MathGL run test");}
  //}
 
  //{--------------------------------------------------------Main loop---------------------------------------------------------
@@ -37,24 +42,37 @@ int main()
         if(it->energy<(it->species->death_threshold)){ //see if agent should die
             cell_death(plate, nutrients, cells, it);
         }
-        else{cells.copy_positions(it);}
+        else if(draw->is_draw){cells.copy_positions(it);}
     }
-    draw->link_agent_position(cells.agent_positions);
+    if(draw->is_draw){draw->link_agent_position(cells.agent_positions);}
  //}
 
  //{-------------------------------------------------------Diffusion----------------------------------------------------------
     update_laplace(plate, nutrients);
-    diffusion(plate->diff_cnt, nutrients, gr);
-    if(t%draw->steps==0){gr.Update();}
+    diffusion(plate->diff_cnt, nutrients);
+    if(draw->is_draw && t%draw->steps==0){gr->Update();}
  }
  //}
 
  //{----------------------------------------------------Run FLTK window-------------------------------------------------------
- gr.Run();// This goes at the end of main!
+ if(draw->is_draw){gr->Run();}// This goes at the end of main!
+
+ int sum = 0;
+ for(auto &i:cells.agent_gridmap){
+    int cnt = cells.agent_gridmap.count(i.first);
+    if(cnt!=0){sum += cnt;}
+ }
+ float mean = (float)sum/(float)cells.agent_gridmap.size();
+ std::cout<<"Mean grid density in hash table: "<<mean<<std::endl;
+ std::cout<<"Number of agents: "<<cells.agent_list.size()<<std::endl;
+
+ double seconds_since_start = difftime( time(0), start);
+ std::cout<<"Total runtime in seconds: "<<seconds_since_start<<std::endl;
  //}
 
  //{--------------------------------------------------------Cleanup-----------------------------------------------------------
  delete draw;
+ delete gr;
  //clean up agents
  delete plate;
  nutrients.clear();

@@ -2,7 +2,7 @@
 #define MAIN_H_INCLUDED
 
 void read_in (Plate*& plate, yeastDraw*& draw, std::vector<Nutrient>& nutrients, std::vector<Cells::Species>& species, std::string filename);
-void diffusion(int& diff_cnt, std::vector<Nutrient>& nutrients, mglFLTK& gr);
+void diffusion(int& diff_cnt, std::vector<Nutrient>& nutrients);
 void update_laplace(Plate*& plate, std::vector<Nutrient>& nutrients);
 void feed(Plate*& plate, std::vector<Nutrient>& nutrients, std::list<Cells::Agent>::iterator &agent);
 void cell_death(Plate*& plate, std::vector<Nutrient>& nutrients, Cells &cells,std::list<Cells::Agent>::iterator &agent);
