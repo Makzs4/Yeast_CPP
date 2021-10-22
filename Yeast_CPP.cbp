@@ -8,13 +8,18 @@
 		<Build>
 			<Target title="Debug">
 				<Option output="bin/Debug/Yeast_CPP" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../Yeast_CPP" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-std=gnu++17" />
+					<Add option="-pg" />
 					<Add option="-g" />
 				</Compiler>
+				<Linker>
+					<Add option="-pg -lgmon" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/Yeast_CPP" prefix_auto="1" extension_auto="1" />
@@ -24,10 +29,11 @@
 				<Compiler>
 					<Add option="-O3" />
 					<Add option="-std=gnu++17" />
+					<Add option="-pg" />
 				</Compiler>
 				<Linker>
 					<Add option="-O3" />
-					<Add option="-s" />
+					<Add option="-pg -lgmon" />
 				</Linker>
 			</Target>
 		</Build>

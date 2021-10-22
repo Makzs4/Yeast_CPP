@@ -23,6 +23,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/functional/hash.hpp>
 #include <mgl2/fltk.h>
+#include <omp.h>
 
 // delete if unused!
 #include <valarray>
@@ -574,7 +575,8 @@ public:
             for(auto &positions_map:species_map.second){
                 for(auto &position_vector:positions_map.second){
                     position_vector.clear();
-
+                    //preallocate memory
+                    position_vector.reserve(agent_list.size()*2);
                 }
             }
         }
@@ -660,6 +662,160 @@ public:
     void init_agents(Plate*& plate, std::vector<Cells::Species>& species){
         for(auto &i:species){
             init_positions(plate, &i);
+        }
+    }
+
+    ///Agent lifecycle functions (in a different form for later parallelisation)
+
+    //Feeding
+    void feed(Plate*& plate, std::vector<Nutrient>& nutrients){
+        #pragma omp parallel
+        #pragma omp single
+        {
+            for(auto agent=agent_list.begin(); agent!=agent_list.end(); ++agent){
+                #pragma omp task firstprivate(agent)
+                {
+                    //if agent is active: uptake and metabolism are unchanged, if it's in G0 state: both are weighted by g0_factor
+                    float weight = (agent->state+!(agent->state)*agent->species->g0_factor);
+
+                    auto idx=0;
+                    for(auto &n:nutrients){
+                        for(auto &i:agent->occupied_density_space){
+                            //feeding
+                            float uptake = std::min((agent->nutrient_uptake[idx])*(agent->species->uptake_eff[idx]),n.density_space.coeff(i));
+                            uptake = weight*uptake;
+                            agent->energy[idx] += uptake;
+                            n.density_space.coeffRef(i) -=  uptake;
+                        }
+                        //metabolising
+                        float burned_E = weight*agent->species->metab_E[idx];
+                        agent->energy[idx] -= burned_E;
+                        idx++;
+                    }
+                }
+            }
+            #pragma omp taskwait
+        }
+    }
+
+    //State decision
+    void decide_state(){
+        #pragma omp parallel
+        #pragma omp single
+        {
+            for(auto agent=agent_list.begin(); agent!=agent_list.end(); ++agent){
+                #pragma omp task firstprivate(agent)
+                //decide whether an agent should be active or in G0 state
+                agent->state = (agent->energy > agent->species->g0_threshold);
+            }
+            #pragma omp taskwait
+        }
+    }
+
+    //Division decision
+    void can_divide(){
+        #pragma omp parallel
+        #pragma omp single
+        {
+            for(auto agent=agent_list.begin(); agent!=agent_list.end(); ++agent){
+                #pragma omp task firstprivate(agent)
+                //check energy level first
+                agent->divide = (agent->energy > agent->species->div_threshold);
+                if(!agent->divide){continue;}
+
+                //check 'density' of grid cells occupied by agent
+                //if all of them are 'full', then divide is 0, else 1
+                agent->divide = false;
+                for(auto &i:agent->occupied_uniform_grids){
+                    auto range = agent_gridmap.equal_range(i);
+                    auto density = std::distance(range.first,range.second);
+                    agent->divide = agent->divide||(density < 24);
+                }
+            }
+            #pragma omp taskwait
+        }
+    }
+
+    //Cell division
+    void cell_division(Plate*& plate, std::mt19937 &gen, std::normal_distribution<> &distr, int tries, bool draw){
+        for(auto agent=agent_list.begin(); agent!=agent_list.end(); ++agent){
+            //skip agent if it's not qualified for division
+            if(!agent->divide){continue;}
+
+            //create a number of possible coordinates for daughter cell
+            for(auto i=0;i<tries;++i){
+                float x = (float) distr(gen);
+                float y = (float) distr(gen);
+                float z = (float) distr(gen);
+                float norm = inverse_square_root(x*x + y*y + z*z);
+                x = x*norm*2*agent->species->cell_radius + agent->pos[0];
+                y = y*norm*2*agent->species->cell_radius + agent->pos[1];
+                z = z*norm*2*agent->species->cell_radius + agent->pos[2];
+
+                //reject the ones that are outside of permitted area - classic rejection method
+                if((x>=plate->x-agent->species->cell_radius) || (x<=0) ||
+                   (y>=plate->y-agent->species->cell_radius) || (y<=0) ||
+                   (z>=plate->z-agent->species->cell_radius) || (z<=plate->agar_height + agent->species->cell_radius)){goto loop_end;}
+
+
+                {
+                //test each point, until a good one is found
+                //see if occupied uniform grids here are "full"
+                std::vector<int> occupied_uniform_grids = agent->occupied_grid_cells({0,0,plate->agar_height},conversion_factor,gridcell_size,gridmap_x,gridmap_y);
+                //std::cout<<"# of occupied grids: "<<occupied_uniform_grids.size()<<std::endl;
+                for(auto grid:occupied_uniform_grids){
+                   auto range = agent_gridmap.equal_range(grid);
+                   auto density = std::distance(range.first,range.second);
+
+                   //std::cout<<"Local density: "<<density<<std::endl;
+                   if(density >= 24){goto loop_end;}
+
+                   //if not, check the distance between the candidate coordinate and each agent already in this grid cell
+                   for(auto& it=range.first; it!=range.second; ++it){
+                        float sqrd_dist = pow(it->second->pos[0]-x,2) +
+                                          pow(it->second->pos[1]-y,2) +
+                                          pow(it->second->pos[2]-z,2);
+
+                        //std::cout<<"Squared distance: "<<sqrd_dist<<std::endl;
+                        if(sqrd_dist<(agent->species->sqrd_radius + it->second->species->sqrd_radius +
+                            2*agent->species->cell_radius*it->second->species->cell_radius)){
+                            goto loop_end;
+                        }
+                    }
+                }
+                //if the distances are good, create daughter agent at (x,y,z)
+                Cells::Agent new_agent(plate, *this, agent->species, {x,y,z});
+                add_agent(plate, new_agent);
+                if(draw){copy_positions(agent_list.begin());} //not so pretty to call it here as well :/
+                goto next_agent;
+                }
+
+                loop_end:;
+            }
+
+            next_agent:;
+        }
+    }
+
+    //Cell death
+    void cell_death(Plate*& plate, std::vector<Nutrient>& nutrients, bool draw){
+        for(auto agent=agent_list.begin(); agent!=agent_list.end(); ++agent){
+            //skip agent if it's not qualified for death
+            if(agent->energy >= agent->species->death_threshold){
+                if(draw){copy_positions(agent);}
+                continue;
+            }
+
+            //return the agent's respective energy value into the corresponding nutrient density matrix
+            for(auto &i:agent->occupied_density_space){
+                auto idx=0;
+                for(auto &n:nutrients){
+                    n.density_space.coeffRef(i) +=  agent->energy[idx];
+                    idx++;
+                }
+            }
+            //kill the agent
+            delete_agent(plate, agent);
         }
     }
 };

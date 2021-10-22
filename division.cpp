@@ -36,7 +36,7 @@ void cell_division(Plate*& plate, Cells &cells, std::list<Cells::Agent>::iterato
                    auto density = std::distance(range.first,range.second);
 
                    //std::cout<<"Local density: "<<density<<std::endl;
-                   if(density >= 50){goto loop_end;}
+                   if(density >= 24){goto loop_end;}
 
                    //if not, check the distance between the candidate coordinate and each agent already in this grid cell
                    for(auto& it=range.first; it!=range.second; ++it){
@@ -54,7 +54,7 @@ void cell_division(Plate*& plate, Cells &cells, std::list<Cells::Agent>::iterato
                //if the distances are good, create daughter agent at (x,y,z)
                Cells::Agent new_agent(plate, cells, agent->species, {x,y,z});
                cells.add_agent(plate, new_agent);
-               cells.copy_positions(cells.agent_list.begin()); //not so pretty to call it here as well :/
+               //cells.copy_positions(cells.agent_list.begin()); //not so pretty to call it here as well :/
                //std::cout<<"Division happened!"<<std::endl;
                return;
            }

@@ -31,19 +31,29 @@ int main()
  for(auto t=0; t<plate->t; t++){
     std::cout<<t<<std::endl;
     cells.clear_positions();
-    for(auto it=cells.agent_list.begin();it!=cells.agent_list.end();++it){ //go through all agents
-        feed(plate, nutrients, it);
 
-        it->decide_state();
-        it->can_divide(cells);
+////life-cycle functions
+//for(auto it=cells.agent_list.begin();it!=cells.agent_list.end();++it){
+//    feed(plate, nutrients, it);
+//
+//    it->decide_state();
+//    it->can_divide(cells);
+//
+//    if(it->state && it->divide){cell_division(plate, cells, it, gen, distr, 1000);}
+//
+//    if(it->energy<(it->species->death_threshold)){ //see if agent should die
+//        cell_death(plate, nutrients, cells, it);
+//    }
+//    else if(draw->is_draw){cells.copy_positions(it);}
+//}
 
-        if(it->state && it->divide){cell_division(plate, cells, it, gen, distr, 1000);}
+    //life-cycle functions
+    cells.feed(plate, nutrients);
+    cells.decide_state();
+    cells.can_divide();
+    cells.cell_division(plate, gen, distr, 500, draw->is_draw);
+    cells.cell_death(plate, nutrients, draw->is_draw);
 
-        if(it->energy<(it->species->death_threshold)){ //see if agent should die
-            cell_death(plate, nutrients, cells, it);
-        }
-        else if(draw->is_draw){cells.copy_positions(it);}
-    }
     if(draw->is_draw){draw->link_agent_position(cells.agent_positions);}
  //}
 
