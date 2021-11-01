@@ -1,6 +1,6 @@
 PLATE
 time_step  space_step  diffusion_counter  diffusion_type  max_x  max_y  max_z  iteration_number  height_of_culture_media
-1          1           5                  Neumann         75     75     25     10                3
+1          1           5                  Neumann         75     75     25     100               3
 
 NUTRIENT
 name  initial_density  diffusion_constant_in_culture_media  diffusion_constant_in_air  diffusion_constant_near_cells

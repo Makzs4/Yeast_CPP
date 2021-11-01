@@ -737,37 +737,62 @@ public:
     }
 
     //Cell division
-    void cell_division(Plate*& plate, std::mt19937 &gen, std::normal_distribution<> &distr, int tries, bool draw){
+    void cell_division(Plate*& plate, std::mt19937 &gen, std::normal_distribution<> &distr, int tries, float sigma, bool draw){
         for(auto agent=agent_list.begin(); agent!=agent_list.end(); ++agent){
             //skip agent if it's not qualified for division
             if(!agent->divide){continue;}
 
-            //create a number of possible coordinates for daughter cell
+            float r = agent->species->cell_radius;
+            float sqrd_r = agent->species->sqrd_radius;
+            float a = agent->pos[2]-(plate->agar_height);
+            if(a>=2*r){a=r-0.05;}
+            float m = -1*a*inverse_square_root(4*r*r-a*a); //4*r*r = (2r)^2
+
             for(auto i=0;i<tries;++i){
+                //create a possible position for daughter cell
                 float x = (float) distr(gen);
                 float y = (float) distr(gen);
-                float z = (float) distr(gen);
+                float z = (float) distr(gen) * sigma;
+
                 float norm = inverse_square_root(x*x + y*y + z*z);
-                x = x*norm*2*agent->species->cell_radius + agent->pos[0];
-                y = y*norm*2*agent->species->cell_radius + agent->pos[1];
-                z = z*norm*2*agent->species->cell_radius + agent->pos[2];
+                x = x*norm;
+                y = y*norm;
+                z = z*norm;
 
-                //reject the ones that are outside of permitted area - classic rejection method
-                if((x>=plate->x-agent->species->cell_radius) || (x<=0) ||
-                   (y>=plate->y-agent->species->cell_radius) || (y<=0) ||
-                   (z>=plate->z-agent->species->cell_radius) || (z<=plate->agar_height + agent->species->cell_radius)){goto loop_end;}
+//                //reject the ones that are outside of permitted area - classic rejection method
+//                if((x>=plate->x-r) || (x<=0) ||
+//                   (y>=plate->y-r) || (y<=0) ||
+//                   (z>=plate->z-r) || (z<=plate->agar_height + r)){goto loop_end;}
 
+                z = z+m*(-1*z+1);
+
+                if(z<m){
+                    z = m;
+                    norm = inverse_square_root(x*x + y*y);
+                    x = x*norm;
+                    y = y*norm;
+                }
+
+                norm = inverse_square_root(x*x + y*y + z*z);
+                x = x*norm*2*r + agent->pos[0];
+                y = y*norm*2*r + agent->pos[1];
+                z = z*norm*2*r + agent->pos[2];
+
+                //if position is out of bounds, project it on the other side of the "division sphere"
+                x = (x>=plate->x-r)*(x-2*(x-agent->pos[0]))+(x<=0)*(x+2*(agent->pos[0]-x))+(x<plate->x-r && x>0)*x;
+                y = (y>=plate->y-r)*(y-2*(y-agent->pos[1]))+(y<=0)*(y+2*(agent->pos[1]-y))+(y<plate->y-r && y>0)*y;
+                z = (z>=plate->z-r)*(z-2*(z-agent->pos[2]))+
+                    (z<=plate->agar_height+r)*(z+2*(agent->pos[2]-z))+
+                    (z<plate->z-r && z>plate->agar_height+r)*z;
 
                 {
                 //test each point, until a good one is found
                 //see if occupied uniform grids here are "full"
                 std::vector<int> occupied_uniform_grids = agent->occupied_grid_cells({0,0,plate->agar_height},conversion_factor,gridcell_size,gridmap_x,gridmap_y);
-                //std::cout<<"# of occupied grids: "<<occupied_uniform_grids.size()<<std::endl;
                 for(auto grid:occupied_uniform_grids){
                    auto range = agent_gridmap.equal_range(grid);
                    auto density = std::distance(range.first,range.second);
 
-                   //std::cout<<"Local density: "<<density<<std::endl;
                    if(density >= 24){goto loop_end;}
 
                    //if not, check the distance between the candidate coordinate and each agent already in this grid cell
@@ -776,11 +801,8 @@ public:
                                           pow(it->second->pos[1]-y,2) +
                                           pow(it->second->pos[2]-z,2);
 
-                        //std::cout<<"Squared distance: "<<sqrd_dist<<std::endl;
-                        if(sqrd_dist<(agent->species->sqrd_radius + it->second->species->sqrd_radius +
-                            2*agent->species->cell_radius*it->second->species->cell_radius)){
-                            goto loop_end;
-                        }
+                        if(sqrd_dist<(sqrd_r + it->second->species->sqrd_radius +
+                           2*r*it->second->species->cell_radius)){goto loop_end;}
                     }
                 }
                 //if the distances are good, create daughter agent at (x,y,z)

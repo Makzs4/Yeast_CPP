@@ -51,7 +51,7 @@ int main()
     cells.feed(plate, nutrients);
     cells.decide_state();
     cells.can_divide();
-    cells.cell_division(plate, gen, distr, 500, draw->is_draw);
+    cells.cell_division(plate, gen, distr, 500, 0.5, draw->is_draw);
     cells.cell_death(plate, nutrients, draw->is_draw);
 
     if(draw->is_draw){draw->link_agent_position(cells.agent_positions);}
