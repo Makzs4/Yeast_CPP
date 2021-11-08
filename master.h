@@ -808,7 +808,7 @@ public:
                 //if the distances are good, create daughter agent at (x,y,z)
                 Cells::Agent new_agent(plate, *this, agent->species, {x,y,z});
                 add_agent(plate, new_agent);
-                if(draw){copy_positions(agent_list.begin());} //not so pretty to call it here as well :/
+                if(draw){copy_positions(agent_list.begin());} //not so pretty to call it here as well :/ <- this may be redundant!
                 goto next_agent;
                 }
 
@@ -992,6 +992,108 @@ public:
     }
 };
 
+class Statistics : public mglDraw{
+public:
+//    std::map<Cells::Species*,std::map<bool,std::vector<int>>> growth_curves;
+//    std::map<Cells::Species*,std::map<bool,std::array<std::vector<double>,2>>> heatmaps_x_y;
+    int species_num;
+    std::map<Cells::Species*,std::map<bool,mglData>> growth_curves;
+    std::map<Cells::Species*,std::map<bool,std::array<mglData,2>>> heatmaps_x_y;
+
+    Statistics(){}
+
+    //Initialize containers in constructor
+    Statistics(int max_t, std::vector<Cells::Species>& species){
+        species_num = species.size();
+        for(auto &i:species){
+            //growth curves
+//            mglData population(max_t, 0);
+            mglData population;
+            population.Create(max_t);
+            growth_curves[&i][0] = population;
+            growth_curves[&i][1] = population;
+
+            //heatmaps
+            std::array<mglData,2> heatmap_positions;
+            heatmaps_x_y[&i][0] = heatmap_positions;
+            heatmaps_x_y[&i][1] = heatmap_positions;
+        }
+    }
+
+    ~Statistics(){}
+
+    void fill_growth_curve(int t, std::list<Cells::Agent>& agent_list){
+        for(auto agent=agent_list.begin(); agent!=agent_list.end(); ++agent){
+            growth_curves[agent->species][agent->state][t] += 1;
+        }
+    }
+
+    //fill heatmaps_x_y(call it after the final positions have been copied)
+    void fill_heatmaps(std::map<Cells::Species*,std::map<bool,std::array<std::vector<double>,3>>>& agent_positions){
+        for(auto &species_map:agent_positions){
+            for(auto &positions_map:species_map.second){
+                //heatmaps
+                heatmaps_x_y[species_map.first][positions_map.first][0] = agent_positions[species_map.first][positions_map.first][0];
+                heatmaps_x_y[species_map.first][positions_map.first][1] = agent_positions[species_map.first][positions_map.first][1];
+            }
+        }
+    }
+
+    int Draw(mglGraph* gr){
+
+        //growth curves
+        std::string title;
+        int counter = 1;
+        int i = 0;
+        //int x, y;
+        for(auto &species_map:growth_curves){
+            //active agents
+            title = "Species-" + std::to_string(counter) + ", active agents";
+            gr->SubPlot(species_num+1,2,i);  gr->Title(title.c_str());
+            gr->SetRanges(0,species_map.second[1].GetNx(),0,species_map.second[1].Maximal());
+            gr->Axis("U");
+            gr->Box();
+            gr->Plot(species_map.second[1]);
+
+            //g0 agents
+            i = i+species_num;
+            title = "Species-" + std::to_string(counter) + ", G_0 agents";
+            gr->SubPlot(species_num+1,2,i);  gr->Title(title.c_str());
+            gr->SetRanges(0,species_map.second[0].GetNx(),0,species_map.second[0].Maximal());
+            gr->Axis("U");
+            gr->Box();
+            gr->Plot(species_map.second[0]);
+
+            counter ++;
+            i++;
+        }
+
+//        //heatmaps
+//        mglData z_values;
+//        std::string title;
+//        int counter = 1;
+//        for(auto &species_map:heatmaps_x_y){
+//            //active agents
+//            int i = 0;
+//            z_values.Create(species_map.second[1][0].GetNx());
+//            title = "Species #" + std::to_string(counter) + ", active agents";
+//            gr->SubPlot(species_num+1,2,i);  gr->Title(title.c_str());
+//            gr->Dens(species_map.second[1][0],species_map.second[1][1], z_values);
+//
+//            //g0 agents
+//            i = i+species_num;
+//            z_values.Create(species_map.second[0][0].GetNx());
+//            title = "Species #" + std::to_string(counter) + ", G_0 agents";
+//            gr->SubPlot(species_num+1,2,i);  gr->Title(title.c_str());
+//            gr->Dens(species_map.second[0][0],species_map.second[0][1], z_values);
+//
+//            counter += 1;
+//        }
+
+        return 0;
+    }
+
+};
 //}
 
 #endif // LIBRARIES_H_INCLUDED

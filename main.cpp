@@ -13,7 +13,9 @@ int main()
  //{--------------------------------------------------Create initial objects--------------------------------------------------
  Plate* plate = nullptr;
  yeastDraw* draw = nullptr;
- mglFLTK* gr = nullptr;
+ mglFLTK* runtime_window = nullptr;
+ Statistics* stats = nullptr;
+ mglFLTK* stats_window = nullptr;
  std::vector<Nutrient> nutrients;
  std::vector<Cells::Species> species;
  //}
@@ -24,12 +26,16 @@ int main()
  plate->set_plate_dimensions(cells.gridcell_size);
  for(auto &nutrient:nutrients){nutrient.set_matrices(plate);}
  cells.init_agents(plate, species);
- if(draw->is_draw){gr = new mglFLTK(draw, "MathGL run test");}
+ if(draw->is_draw){
+    runtime_window = new mglFLTK(draw, "Runtime window");
+    stats = new Statistics(plate->t, species);
+ }
  //}
 
  //{--------------------------------------------------------Main loop---------------------------------------------------------
- for(auto t=0; t<plate->t; t++){
+ for(auto t=0; t<=plate->t; t++){
     std::cout<<t<<std::endl;
+    bool draw_condition = draw->is_draw && t%draw->steps==0;
     cells.clear_positions();
 
 ////life-cycle functions
@@ -51,38 +57,39 @@ int main()
     cells.feed(plate, nutrients);
     cells.decide_state();
     cells.can_divide();
-    cells.cell_division(plate, gen, distr, 500, 0.5, draw->is_draw);
-    cells.cell_death(plate, nutrients, draw->is_draw);
+    cells.cell_division(plate, gen, distr, 500, 0.1, draw_condition);
+    cells.cell_death(plate, nutrients, draw_condition);
 
-    if(draw->is_draw){draw->link_agent_position(cells.agent_positions);}
+    if(draw_condition){draw->link_agent_position(cells.agent_positions);}
+    if(draw->is_draw){stats->fill_growth_curve(t, cells.agent_list);}
  //}
 
  //{-------------------------------------------------------Diffusion----------------------------------------------------------
     update_laplace(plate, nutrients);
     diffusion(plate->diff_cnt, nutrients);
-    if(draw->is_draw && t%draw->steps==0){gr->Update();}
+    if(draw_condition){runtime_window->Update();}
+ }
+ //}
+
+ //{---------------------------------------------Extract remaining statistics-------------------------------------------------
+ if(draw->is_draw){
+    stats->fill_heatmaps(cells.agent_positions);
+    stats_window = new mglFLTK(stats, "Statistics");
  }
  //}
 
  //{----------------------------------------------------Run FLTK window-------------------------------------------------------
- if(draw->is_draw){gr->Run();}// This goes at the end of main!
-
- int sum = 0;
- for(auto &i:cells.agent_gridmap){
-    int cnt = cells.agent_gridmap.count(i.first);
-    if(cnt!=0){sum += cnt;}
- }
- float mean = (float)sum/(float)cells.agent_gridmap.size();
- std::cout<<"Mean grid density in hash table: "<<mean<<std::endl;
- std::cout<<"Number of agents: "<<cells.agent_list.size()<<std::endl;
-
  double seconds_since_start = difftime( time(0), start);
  std::cout<<"Total runtime in seconds: "<<seconds_since_start<<std::endl;
+
+ if(draw->is_draw){runtime_window->Run();}
  //}
 
  //{--------------------------------------------------------Cleanup-----------------------------------------------------------
  delete draw;
- delete gr;
+ delete runtime_window;
+ delete stats;
+ delete stats_window;
  //clean up agents
  delete plate;
  nutrients.clear();

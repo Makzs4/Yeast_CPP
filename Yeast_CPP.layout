@@ -2,23 +2,36 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Release" />
-	<File name="master.h" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="death.cpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="40554" topLine="361" />
+			<Cursor1 position="19" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="master.h" open="1" top="1" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="41207" topLine="36" />
 		</Cursor>
 		<Folding>
-			<Collapse line="822" />
-			<Collapse line="873" />
+			<Collapse line="32" />
+			<Collapse line="69" />
+			<Collapse line="75" />
+			<Collapse line="87" />
+			<Collapse line="103" />
+			<Collapse line="115" />
+			<Collapse line="175" />
+			<Collapse line="267" />
+			<Collapse line="844" />
+			<Collapse line="895" />
 		</Folding>
 	</File>
-	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="Test_Eigen_handling.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3219" topLine="0" />
+			<Cursor1 position="2629" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="division.cpp" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="3520" topLine="34" />
+			<Cursor1 position="2693" topLine="18" />
 		</Cursor>
 	</File>
 	<File name="diffusion.cpp" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -26,34 +39,14 @@
 			<Cursor1 position="1504" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="diffusion_illustrations.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1029" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="Test_MathGL_handling.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="118" topLine="0" />
-		</Cursor>
-	</File>
 	<File name="Test_Hashtable.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="1311" topLine="50" />
 		</Cursor>
 	</File>
-	<File name="main.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="read_in.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1072" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="feeding.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="868" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="death.cpp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="19" topLine="0" />
+			<Cursor1 position="859" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="Test_Valarray_handling.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -61,14 +54,29 @@
 			<Cursor1 position="19" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="Test_Eigen_handling.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="diffusion_illustrations.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2629" topLine="0" />
+			<Cursor1 position="1029" topLine="0" />
 		</Cursor>
 	</File>
-	<File name="read_in.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="main.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="859" topLine="0" />
+			<Cursor1 position="1055" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="feeding.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="868" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="main.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="877" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="Test_MathGL_handling.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="118" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>
