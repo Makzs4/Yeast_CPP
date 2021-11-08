@@ -1049,8 +1049,9 @@ public:
         for(auto &species_map:growth_curves){
             //active agents
             title = "Species-" + std::to_string(counter) + ", active agents";
-            gr->SubPlot(species_num+1,2,i);  gr->Title(title.c_str());
+            gr->SubPlot(species_num,2,i);  gr->Title(title.c_str());
             gr->SetRanges(0,species_map.second[1].GetNx(),0,species_map.second[1].Maximal());
+            gr->Label('x', "Iteration time",0); gr->Label('y', "Population",0);
             gr->Axis("U");
             gr->Box();
             gr->Plot(species_map.second[1]);
@@ -1058,13 +1059,15 @@ public:
             //g0 agents
             i = i+species_num;
             title = "Species-" + std::to_string(counter) + ", G_0 agents";
-            gr->SubPlot(species_num+1,2,i);  gr->Title(title.c_str());
+            gr->SubPlot(species_num,2,i);  gr->Title(title.c_str());
             gr->SetRanges(0,species_map.second[0].GetNx(),0,species_map.second[0].Maximal());
+            gr->Label('x', "Iteration time",0); gr->Label('y', "Population",0);
             gr->Axis("U");
             gr->Box();
             gr->Plot(species_map.second[0]);
 
             counter ++;
+            i = 0;
             i++;
         }
 
