@@ -6,7 +6,7 @@ int main()
  time_t start = time(0);
 
  srand(time(NULL));
- std::mt19937 gen(time(NULL));
+ std::mt19937 gen(/*time(NULL)*/42);
 // std::random_device rd{};
 // std::mt19937 gen{rd()};
  std::normal_distribution<> distr(0,5);
@@ -57,7 +57,7 @@ int main()
     cells.feed(plate, nutrients);
     cells.decide_state();
     cells.can_divide();
-    cells.cell_division(plate, gen, distr, 500, 0.1, draw_condition);
+    cells.cell_division(plate, gen, distr, 500, 0.5, draw_condition);
     cells.cell_death(plate, nutrients, draw_condition);
 
     if(draw_condition){draw->link_agent_position(cells.agent_positions);}

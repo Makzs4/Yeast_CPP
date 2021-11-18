@@ -744,7 +744,7 @@ public:
 
             float r = agent->species->cell_radius;
             float sqrd_r = agent->species->sqrd_radius;
-            float a = agent->pos[2]-(plate->agar_height);
+            float a = agent->pos[2]-(plate->agar_height + r);
             if(a>=2*r){a=r-0.05;}
             float m = -1*a*inverse_square_root(4*r*r-a*a); //4*r*r = (2r)^2
 
@@ -801,8 +801,8 @@ public:
                                           pow(it->second->pos[1]-y,2) +
                                           pow(it->second->pos[2]-z,2);
 
-                        if(sqrd_dist<(sqrd_r + it->second->species->sqrd_radius +
-                           2*r*it->second->species->cell_radius)){goto loop_end;}
+                        if(sqrd_dist+0.01<(sqrd_r + it->second->species->sqrd_radius +
+                           2*r*it->second->species->cell_radius)){goto loop_end;} //floating point precision may not be enough :/
                     }
                 }
                 //if the distances are good, create daughter agent at (x,y,z)
@@ -829,10 +829,11 @@ public:
             }
 
             //return the agent's respective energy value into the corresponding nutrient density matrix
+            auto num_girds = agent->occupied_density_space.size();
             for(auto &i:agent->occupied_density_space){
                 auto idx=0;
                 for(auto &n:nutrients){
-                    n.density_space.coeffRef(i) +=  agent->energy[idx];
+                    n.density_space.coeffRef(i) +=  static_cast<float>(agent->energy[idx])/num_girds;
                     idx++;
                 }
             }
@@ -977,8 +978,8 @@ public:
      gr->Aspect(x,y,z);
      gr->SetRange('x',0,x); gr->SetRange('y',0,y); gr->SetRange('z',0,z);gr->SetRange('c',nutrients[0],true);
      gr->Axis("U");
-     gr->Box();
-     gr->Cloud(nutrients[0],"BbcyrR");//BBBBBB{xFFFFFF00}BbcyrR {xFFFFFF00}BbcyrR
+     //gr->Box();
+     gr->Cloud(nutrients[0],"Bbcgy");//BBBBBB{xFFFFFF00}BbcyrR {xFFFFFF00}BbcyrR
      //gr->Colorbar("{xFFFFFF00}BbcyrR>I");
     }
 
