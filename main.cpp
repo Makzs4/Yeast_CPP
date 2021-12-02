@@ -25,7 +25,7 @@ int main()
  Cells cells(plate, species);
  plate->set_plate_dimensions(cells.gridcell_size);
  for(auto &nutrient:nutrients){nutrient.set_matrices(plate);}
- cells.init_agents(plate, species);
+ cells.init_agents(plate, gen, distr, species);
  if(draw->is_draw){
     runtime_window = new mglFLTK(draw, "Runtime window");
     stats = new Statistics(plate->t, species);
@@ -57,7 +57,7 @@ int main()
     cells.feed(plate, nutrients);
     cells.decide_state();
     cells.can_divide();
-    cells.cell_division(plate, gen, distr, 500, 0.5, draw_condition);
+    cells.cell_division(plate, gen, distr, 500, 0.1, draw_condition);
     cells.cell_death(plate, nutrients, draw_condition);
 
     if(draw_condition){draw->link_agent_position(cells.agent_positions);}

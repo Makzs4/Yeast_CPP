@@ -627,7 +627,7 @@ public:
         --agent;
     }
 
-    inline void init_positions(Plate*& plate, Cells::Species *s){
+    inline void init_positions(Plate*& plate, std::mt19937 &gen, std::normal_distribution<> &distr, Cells::Species *s){
         std::vector<std::array<float,2>> positions;
         float x = s->init_pos_x /*+ s->init_cell_dev * (float) rand()/RAND_MAX*/;
         float y = s->init_pos_y /*+ s->init_cell_dev * (float) rand()/RAND_MAX*/;
@@ -640,8 +640,8 @@ public:
         float d = s->cell_radius*2;
         while(counter < s->init_cell_num){
             //get a trial point
-            float x = s->init_pos_x + s->init_cell_dev * (float) rand()/RAND_MAX;
-            float y = s->init_pos_y + s->init_cell_dev * (float) rand()/RAND_MAX;
+            float x = s->init_pos_x + s->init_cell_dev * (float) distr(gen);
+            float y = s->init_pos_y + s->init_cell_dev * (float) distr(gen);
 
             //see how close it is to existing points
             std::vector<float> dist;
@@ -659,9 +659,9 @@ public:
         }
     }
 
-    void init_agents(Plate*& plate, std::vector<Cells::Species>& species){
+    void init_agents(Plate*& plate, std::mt19937 &gen, std::normal_distribution<> &distr, std::vector<Cells::Species>& species){
         for(auto &i:species){
-            init_positions(plate, &i);
+            init_positions(plate, gen, distr, &i);
         }
     }
 
@@ -974,6 +974,7 @@ public:
     void Agar(mglGraph* gr){
      //gr->Title("MathGL Demo");
      gr->Rotate(60,40);
+     //gr->Rotate(90,0);
      gr->Alpha(true);
      gr->Aspect(x,y,z);
      gr->SetRange('x',0,x); gr->SetRange('y',0,y); gr->SetRange('z',0,z);gr->SetRange('c',nutrients[0],true);
@@ -1055,7 +1056,7 @@ public:
             gr->Label('x', "Iteration time",0); gr->Label('y', "Population",0);
             gr->Axis("U");
             gr->Box();
-            gr->Plot(species_map.second[1]);
+            gr->Plot(species_map.second[1],"k2");
 
             //g0 agents
             i = i+species_num;
@@ -1065,7 +1066,7 @@ public:
             gr->Label('x', "Iteration time",0); gr->Label('y', "Population",0);
             gr->Axis("U");
             gr->Box();
-            gr->Plot(species_map.second[0]);
+            gr->Plot(species_map.second[0],"k2");
 
             counter ++;
             i = 0;

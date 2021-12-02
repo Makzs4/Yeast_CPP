@@ -1,14 +1,14 @@
 PLATE
 time_step  space_step  diffusion_counter  diffusion_type  max_x  max_y  max_z  iteration_number  height_of_culture_media
-1          1           5                  Neumann         75     75     25     140               3
+1          1           5                  Neumann         75     75     25     200               3
 
 NUTRIENT
 name  initial_density  diffusion_constant_in_culture_media  diffusion_constant_in_air  diffusion_constant_near_cells
-food  50               0.1                                  0                          0.05
+food  20               0.1                                  0                          0.005
 
 CELLS
 name       color   initial_energy  food_uptake  food_uptake_efficiency  division_threshold  cell_radius  death_threshold  metabolic_energy  growth_type  g0_factor  g0_threshold  branching_probability  division_direction_deviation  initial_cell_number  initial_cell_deviation  initial_population_center(x,y)
-species_1  green   2.5             0.4          1                       5                   0.7          1.4              0.1               0            0.05       1.5           0.01                   0                             15                    5.7                     35 35
+species_1  green   2.5             0.4          1                       5                   0.7          1.4              0.1               0            0.05       1.5           0.01                   0                             1                    1.5                     35 35
 
 
 VISUALISATION
