@@ -1,4 +1,4 @@
-# Yeast_CPP README
+# Yeast_CPP
 The purpose of this readme is to notify the user about the usage and dependencies of the yeast model.
 
 ## Necessary external librares
